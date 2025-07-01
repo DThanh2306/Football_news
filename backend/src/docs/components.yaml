@@ -1,0 +1,53 @@
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    UserPublic:
+      type: object
+      properties:
+        user_id:
+          type: integer
+          example: 1
+        username:
+          type: string
+          example: "duythanhh"
+        email:
+          type: string
+          example: "duythanh@example.com"
+        role:
+          type: string
+          example: "user"
+
+    UserLoginResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Đăng nhập thành công"
+        token:
+          type: string
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        user:
+          $ref: "#/components/schemas/UserPublic"
+
+    JSendSuccess:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        data:
+          type: object
+
+    JSendFail:
+      type: object
+      properties:
+        status:
+          type: string
+          example: fail
+        message:
+          type: string
