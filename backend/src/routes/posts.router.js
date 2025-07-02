@@ -13,6 +13,47 @@ const postsController = require("../controllers/posts.controller");
 
 /**
  * @swagger
+ * /posts/{post_id}/favorite:
+ *   post:
+ *     summary: Thêm hoặc bỏ yêu thích bài viết
+ *     tags: [Posts]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: post_id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID bài viết cần thêm/bỏ yêu thích
+ *     responses:
+ *       200:
+ *         description: Thao tác thành công
+ *       404:
+ *         description: Không tìm thấy bài viết
+ *       500:
+ *         description: Lỗi máy chủ
+ */
+router.post("/:post_id/favorite", verifyToken, postsController.toggleFavorite);
+
+/**
+ * @swagger
+ * /posts/favorites:
+ *   get:
+ *     summary: Lấy danh sách bài viết đã yêu thích của người dùng
+ *     tags: [Posts]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Danh sách bài viết đã yêu thích
+ *       500:
+ *         description: Lỗi máy chủ
+ */
+router.get("/favorites", verifyToken, postsController.getFavorites);
+
+/**
+ * @swagger
  * /posts:
  *   post:
  *     summary: Tạo bài viết mới kèm ảnh
@@ -259,6 +300,8 @@ router.delete("/:post_id", verifyToken, postsController.deletePost);
  *         description: Lỗi máy chủ
  */
 router.put("/:post_id/review", verifyToken, postsController.reviewPost);
+
+
 
 module.exports = {
   setup(app) {

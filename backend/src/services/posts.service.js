@@ -93,6 +93,52 @@ async function deletePost(postId) {
   }
 }
 
+async function checkFavorite(userId, postId) {
+  try {
+    const favorite = await knex("favorites")
+      .where({ user_id: userId, post_id: postId })
+      .first();
+    return !!favorite;
+  } catch (error) {
+    console.error("Lỗi khi kiểm tra yêu thích:", error);
+    throw new ApiError(500, "Lỗi khi truy vấn cơ sở dữ liệu", error);
+  }
+}
+
+async function addFavorite(userId, postId) {
+  try {
+    await knex("favorites").insert({
+      user_id: userId,
+      post_id: postId,
+      favorited_at: new Date(),
+    });
+  } catch (error) {
+    console.error("Lỗi khi thêm yêu thích:", error);
+    throw new ApiError(500, "Lỗi khi truy vấn cơ sở dữ liệu", error);
+  }
+}
+
+async function removeFavorite(userId, postId) {
+  try {
+    await knex("favorites").where({ user_id: userId, post_id: postId }).del();
+  } catch (error) {
+    console.error("Lỗi khi bỏ yêu thích:", error);
+    throw new ApiError(500, "Lỗi khi truy vấn cơ sở dữ liệu", error);
+  }
+}
+
+async function getFavoritesByUser(userId) {
+  try {
+    return await knex("favorites")
+      .join("posts", "favorites.post_id", "posts.post_id")
+      .select("posts.*", "favorites.favorited_at")
+      .where("favorites.user_id", userId)
+      .orderBy("favorites.favorited_at", "desc");
+  } catch (error) {
+    console.error("Lỗi khi truy vấn danh sách yêu thích:", error);
+    throw new ApiError(500, "Lỗi khi truy vấn cơ sở dữ liệu", error);
+  }
+}
 
 module.exports = {
   transaction,
@@ -101,5 +147,9 @@ module.exports = {
   getAllPosts,
   getPostById,
   updatePost,
-  deletePost
+  deletePost,
+  checkFavorite,
+  addFavorite,
+  removeFavorite,
+  getFavoritesByUser
 };

@@ -64,25 +64,6 @@ function cleanupUploadedFiles(files) {
   }
 }
 
-// async function getAllPosts(req, res, next) {
-//   const { status, search, page = 1, limit = 10 } = req.query;
-
-//   try {
-//     const filter = {
-//       status,
-//       search,
-//       page: parseInt(page),
-//       limit: parseInt(limit),
-//     };
-
-//     const posts = await postService.getAllPosts(filter);
-
-//     return res.status(200).json(JSend.success(posts));
-//   } catch (error) {
-//     console.error("Lỗi khi lấy danh sách bài viết:", error.message);
-//     return next(new ApiError(500, "Lỗi khi lấy danh sách bài viết"));
-//   }
-// }
 
 async function getPostById(req, res, next) {
   const { post_id } = req.params;
@@ -251,11 +232,49 @@ async function reviewPost(req, res, next) {
   }
 }
 
+async function toggleFavorite(req, res, next) {
+  const { post_id } = req.params;
+
+  try {
+    const post = await postService.getPostById(post_id);
+
+    if (!post) {
+      return res.status(404).json(JSend.fail("Không tìm thấy bài viết"));
+    }
+
+    const existed = await postService.checkFavorite(req.user.user_id, post_id);
+
+    if (existed) {
+      await postService.removeFavorite(req.user.user_id, post_id);
+      return res.status(200).json(JSend.success("Đã bỏ yêu thích bài viết"));
+    } else {
+      await postService.addFavorite(req.user.user_id, post_id);
+      return res.status(200).json(JSend.success("Đã thêm bài viết vào yêu thích"));
+    }
+  } catch (error) {
+    console.error("Lỗi khi xử lý yêu thích bài viết:", error.message);
+    return next(new ApiError(500, "Lỗi khi xử lý yêu thích bài viết"));
+  }
+}
+
+async function getFavorites(req, res, next) {
+  try {
+    const favorites = await postService.getFavoritesByUser(req.user.user_id);
+    return res.status(200).json(JSend.success(favorites));
+  } catch (error) {
+    console.error("Lỗi khi lấy danh sách yêu thích:", error.message);
+    return next(new ApiError(500, "Lỗi khi lấy danh sách yêu thích"));
+  }
+}
+
+
 module.exports = {
   createPost,
   getAllPosts,
   getPostById,
   updatePost,
   deletePost,
-  reviewPost
+  reviewPost,
+  toggleFavorite,
+  getFavorites
 };
