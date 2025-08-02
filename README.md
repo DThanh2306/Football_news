@@ -1,12 +1,12 @@
 # Project - Specialized Topics CT501H
 
-**Semester**: X, **Academic year**: 20XX-20XX
+**Semester**: III, **Academic year**: 2024-2025
 
-**Student ID**: ...
+**Student ID**: B2108121
 
-**Student Name**: ...
+**Student Name**: Nguyen Duy Thanh
 
-**Project Name**: ...
+**Project Name**: Football News Website
 
 ---
 

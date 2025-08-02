@@ -44,7 +44,17 @@ async function getPostById(postId) {
       .where({ post_id: postId })
       .first();
 
-    return post;
+    if (!post) return null;
+
+    const { count } = await knex("favorites")
+      .where({ post_id: postId })
+      .count("post_id as count")
+      .first();
+
+    return {
+      ...post,
+      favorites_count: parseInt(count) || 0,
+    };
   } catch (error) {
     console.error("Lỗi khi truy vấn chi tiết bài viết:", error);
     throw new ApiError(500, "Lỗi khi truy vấn cơ sở dữ liệu", error);
