@@ -100,8 +100,6 @@ router.post(
  *   get:
  *     summary: Admin - Lấy danh sách tất cả bài viết (hỗ trợ lọc theo tất cả trường)
  *     tags: [Posts]
- *     security:
- *       - bearerAuth: []
  *     parameters:
  *       - in: query
  *         name: post_id
@@ -163,7 +161,7 @@ router.post(
  *       500:
  *         description: Lỗi máy chủ
  */
-router.get("/",verifyToken, postsController.getAllPosts);
+router.get("/", postsController.getAllPosts);
 
 /**
  * @swagger

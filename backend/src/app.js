@@ -14,6 +14,7 @@ const playerRouter = require("./routes/players.router");
 const careerRouter = require("./routes/careers.router");
 const matchRouter = require("./routes/matches.router");
 const postRelationRouter = require("./routes/postRelations.router");
+const tagsRouter = require("./routes/tags.router");
 
 const app = express();
 
@@ -33,6 +34,7 @@ playerRouter.setup(app);
 careerRouter.setup(app);
 matchRouter.setup(app);
 postRelationRouter.setup(app);
+tagsRouter.setup(app);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

@@ -37,6 +37,7 @@ async function getPostById(postId) {
         "post_status",
         "reject_reason",
         "post_slug",
+        "tag_id",
         "post_images",
         "post_create_at",
         "post_update_at"
@@ -50,10 +51,16 @@ async function getPostById(postId) {
       .where({ post_id: postId })
       .count("post_id as count")
       .first();
-
+    let tags = [];
+    if (post.tag_ids && post.tag_ids.length) {
+      tags = await knex("tags")
+        .select("tag_id", "tag_name", "tag_slug")
+        .whereIn("tag_id", post.tag_ids);
+    }
     return {
       ...post,
       favorites_count: parseInt(count) || 0,
+      tags
     };
   } catch (error) {
     console.error("Lỗi khi truy vấn chi tiết bài viết:", error);

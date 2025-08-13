@@ -6,7 +6,7 @@ const postService = require("../services/posts.service");
 const slugify = require("slugify");
 
 async function createPost(req, res, next) {
-  const { post_title, post_content } = req.body || {};
+  const { post_title, post_content, tag_id } = req.body || {};
 
   if (!post_title) {
     cleanupUploadedFiles(req.files);
@@ -24,7 +24,10 @@ async function createPost(req, res, next) {
       }
 
       const imagePaths = req.files?.map((file) => `/uploads/${file.filename}`) || [];
-
+      const tagArray =
+        Array.isArray(tag_id)
+          ? tag_id.map((x) => Number(x)).filter((x) => Number.isInteger(x))
+          : [];
       const postData = {
         user_id: req.user.user_id,
         post_title,
@@ -32,6 +35,7 @@ async function createPost(req, res, next) {
         post_status: "pending",
         post_slug: slug,
         post_images: imagePaths,
+        tag_id: tagArray,
         post_create_at: new Date(),
         post_update_at: new Date(),
       };
@@ -105,9 +109,6 @@ async function getAllPosts(req, res, next) {
       }
     }
 
-    if (req.user.role !== "admin") {
-      filter.user_id = req.user.user_id;
-    }
 
     const queryOptions = {
       filter,
@@ -127,7 +128,7 @@ async function getAllPosts(req, res, next) {
 
 async function updatePost(req, res, next) {
   const { post_id } = req.params;
-  const { post_title, post_content, post_slug, post_images } = req.body;
+  const { post_title, post_content, post_slug, post_images, tag_id } = req.body;
 
   try {
     const post = await postService.getPostById(post_id);
@@ -147,7 +148,12 @@ async function updatePost(req, res, next) {
     if (post_slug) updateData.post_slug = post_slug;
     if (Array.isArray(post_images)) updateData.post_images = post_images;
     updateData.post_update_at = new Date();
-
+    if (typeof tag_id !== "undefined") {
+      updateData.tag_id = Array.isArray(tag_id)
+        ? tag_id.map((x) => Number(x)).filter((x) => Number.isInteger(x))
+        : [];
+    }
+    updateData.post_update_at = new Date();
     const updated = await postService.updatePost(post_id, updateData);
 
     if (updated === 0) {
