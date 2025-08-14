@@ -1,8 +1,13 @@
-<script setup></script>
+<script setup>
+import AppHeader from '@/components/AppHeader.vue'
+import { useRoute } from 'vue-router'
+const $route = useRoute()
+</script>
 <template>
-  <div class="min-h-screen bg-gray-100 flex items-center justify-center">
-    <h1 class="text-4xl font-bold text-red-600">✅ TailwindCSS hoạt động rồi!</h1>
+  <div>
+    <AppHeader v-if="!$route.path.startsWith('/admin')" />
+    <router-view />
   </div>
 </template>
-
+  
 <style scoped></style>
