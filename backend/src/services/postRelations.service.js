@@ -28,7 +28,6 @@ async function getPlayersByPost(post_id) {
   }
 }
 
-// Club
 async function addPostClub(post_id, club_id) {
   return knex("post_club").insert({ post_id, club_id });
 }
@@ -44,7 +43,6 @@ async function getClubsByPost(post_id) {
     .select("clubs.*");
 }
 
-// League
 async function addPostLeague(post_id, league_id) {
   return knex("post_league").insert({ post_id, league_id });
 }
@@ -60,6 +58,19 @@ async function getLeaguesByPost(post_id) {
     .select("leagues.*");
 }
 
+async function getAllByPost(post_id) {
+  const players = await getPlayersByPost(post_id);
+  const clubs = await getClubsByPost(post_id);
+  const leagues = await getLeaguesByPost(post_id);
+  
+  return {
+    players,
+    clubs,
+    leagues
+  };
+  
+}
+
 module.exports = {
   addPostPlayer,
   removePostPlayer,
@@ -69,5 +80,6 @@ module.exports = {
   getClubsByPost,
   addPostLeague,
   removePostLeague,
-  getLeaguesByPost
+  getLeaguesByPost,
+  getAllByPost
 };

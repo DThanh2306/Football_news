@@ -87,7 +87,7 @@ async function getPostById(req, res, next) {
 }
 
 async function getAllPosts(req, res, next) {
-  const { page = 1, limit = 10, ...rest } = req.query;
+  const { q, page = 1, limit = 10, ...rest } = req.query;
 
   try {
     const validFields = [
@@ -115,6 +115,7 @@ async function getAllPosts(req, res, next) {
       page: parseInt(page),
       limit: parseInt(limit),
       fuzzyFields: ["post_title", "post_content", "post_slug"],
+      q: q || null
     };
 
     const posts = await postService.getAllPosts(queryOptions);
@@ -128,7 +129,7 @@ async function getAllPosts(req, res, next) {
 
 async function updatePost(req, res, next) {
   const { post_id } = req.params;
-  const { post_title, post_content, post_slug, post_images, tag_id } = req.body;
+  const { post_title, post_content, post_status, post_slug, post_images, tag_id } = req.body;
 
   try {
     const post = await postService.getPostById(post_id);
@@ -198,7 +199,7 @@ async function reviewPost(req, res, next) {
     return res.status(403).json(JSend.fail("Bạn không có quyền duyệt bài viết"));
   }
 
-  if (!["approve", "reject"].includes(action)) {
+  if (!["approve", "reject", "draft"].includes(action)) {
     return res.status(400).json(JSend.fail("Hành động không hợp lệ"));
   }
 
@@ -214,14 +215,10 @@ async function reviewPost(req, res, next) {
     }
 
     const updateData = {
-      post_status: action === "approve" ? "approved" : "rejected",
+      post_status: action === "approve" ? "published" : action, // published | rejected | draft
       post_update_at: new Date(),
+      reject_reason: action === "reject" ? reason : null,
     };
-    if (action === "reject") {
-  updateData.reject_reason = reason;
-    } else {
-      updateData.reject_reason = null;
-    }
 
     const updated = await postService.updatePost(post_id, updateData);
 
@@ -229,9 +226,12 @@ async function reviewPost(req, res, next) {
       return res.status(404).json(JSend.fail("Không tìm thấy bài viết"));
     }
 
-    return res.status(200).json(JSend.success(
-      action === "approve" ? "Đã duyệt bài viết thành công" : "Đã từ chối bài viết thành công"
-    ));
+    let msg = "Cập nhật trạng thái bài viết thành công";
+    if (action === "approve") msg = "Đã duyệt bài viết thành công";
+    else if (action === "reject") msg = "Đã từ chối bài viết thành công";
+    else if (action === "draft") msg = "Đã chuyển bài viết về trạng thái nháp";
+
+    return res.status(200).json(JSend.success(msg));
   } catch (error) {
     console.error("Lỗi khi duyệt bài viết:", error.message);
     return next(new ApiError(500, "Lỗi khi duyệt bài viết"));
@@ -273,6 +273,20 @@ async function getFavorites(req, res, next) {
   }
 }
 
+async function getPostByUserId(req, res, next) {
+  try {
+    const { user_id } = req.params;
+    const posts = await postService.getPostsByUserId(user_id);
+
+    if (!posts || posts.length === 0) {
+      return res.status(404).json(JSend.fail("Không tìm thấy bài viết của người dùng này"));
+    }
+
+    return res.status(200).json(JSend.success(posts));
+  } catch (error) {
+    return next(new ApiError(500, "Lỗi khi lấy bài viết của người dùng"));
+  }
+}
 
 module.exports = {
   createPost,
@@ -282,5 +296,6 @@ module.exports = {
   deletePost,
   reviewPost,
   toggleFavorite,
-  getFavorites
+  getFavorites,
+  getPostByUserId
 };

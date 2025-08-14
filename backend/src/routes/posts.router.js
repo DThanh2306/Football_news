@@ -299,7 +299,7 @@ router.delete("/:post_id", verifyToken, postsController.deletePost);
  */
 router.put("/:post_id/review", verifyToken, postsController.reviewPost);
 
-
+router.get("/user/:user_id",  postsController.getPostByUserId);
 
 module.exports = {
   setup(app) {

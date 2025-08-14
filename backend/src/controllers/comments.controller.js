@@ -44,11 +44,28 @@ async function getCommentsByPost(req, res, next) {
     }
 
     const comments = await commentService.getCommentsByPost(post_id);
-
+    console.log("Comments:", comments);
     return res.status(200).json(JSend.success(comments));
   } catch (error) {
     console.error("Lỗi khi lấy danh sách bình luận:", error.message);
     return next(new ApiError(500, "Lỗi khi lấy danh sách bình luận"));
+  }
+}
+
+async function getCommentByUserId(req, res, next) {
+  const { user_id } = req.params;
+
+  try {
+    const comments = await commentService.getCommentsByUserId(user_id);
+
+    if (!comments || comments.length === 0) {
+      return res.status(404).json(JSend.fail("Không tìm thấy bình luận của người dùng này"));
+    }
+
+    return res.status(200).json(JSend.success(comments));
+  } catch (error) {
+    console.error("Lỗi khi lấy bình luận của người dùng:", error.message);
+    return next(new ApiError(500, "Lỗi khi lấy bình luận của người dùng"));
   }
 }
 
@@ -103,9 +120,21 @@ async function updateComment(req, res, next) {
   }
 }
 
+async function getAllComments(req, res, next) {
+  try {
+    const comments = await commentService.getAllCommentsWithInfo();
+    return res.status(200).json(JSend.success(comments));
+  } catch (error) {
+    console.error("Lỗi khi lấy danh sách bình luận:", error.message);
+    return next(new ApiError(500, "Lỗi khi lấy danh sách bình luận"));
+  }
+}
+
 module.exports = {
   createComment,
   getCommentsByPost,
   deleteComment,
-  updateComment
+  updateComment,
+  getCommentByUserId,
+  getAllComments
 };

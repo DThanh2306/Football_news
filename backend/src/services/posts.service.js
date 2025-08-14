@@ -52,15 +52,16 @@ async function getPostById(postId) {
       .count("post_id as count")
       .first();
     let tags = [];
-    if (post.tag_ids && post.tag_ids.length) {
-      tags = await knex("tags")
-        .select("tag_id", "tag_name", "tag_slug")
-        .whereIn("tag_id", post.tag_ids);
+    if (post.tag_id?.length > 0) {
+      const tags = await knex("tags").whereIn("tag_id", post.tag_id);
+      post.tags = tags;
+    } else {
+      post.tags = [];
     }
     return {
       ...post,
       favorites_count: parseInt(count) || 0,
-      tags
+      tags,
     };
   } catch (error) {
     console.error("Lỗi khi truy vấn chi tiết bài viết:", error);
@@ -68,31 +69,50 @@ async function getPostById(postId) {
   }
 }
 
-async function getAllPosts(options) {
-  const { filter, page, limit, fuzzyFields = [] } = options;
-  const offset = (page - 1) * limit;
+async function getAllPosts({
+  filter = {},
+  page = 1,
+  limit = 10,
+  fuzzyFields = [],
+  q = null,
+}) {
+  const query = knex("posts").select("*");
 
-  const query = knex("posts").select("*").orderBy("post_create_at", "desc");
-
-  for (const key in filter) {
-    if (fuzzyFields.includes(key)) {
-      query.whereILike(key, `%${filter[key]}%`);
-    } else {
-      query.where(key, filter[key]);
-    }
+  if (q && fuzzyFields.length > 0) {
+    query.where((builder) => {
+      fuzzyFields.forEach((field, idx) => {
+        if (idx === 0) {
+          builder.where(field, "ilike", `%${q}%`);
+        } else {
+          builder.orWhere(field, "ilike", `%${q}%`);
+        }
+      });
+    });
   }
 
-  query.limit(limit).offset(offset);
+  for (const key in filter) {
+    query.andWhere(key, filter[key]);
+  }
 
-  const posts = await query;
-  return posts;
+  query
+    .orderBy("post_create_at", "desc")
+    .limit(limit)
+    .offset((page - 1) * limit);
+
+  const [data, totalRes] = await Promise.all([
+    query,
+    knex("posts").count("* as count").first(),
+  ]);
+  return {
+    items: data,
+    total: Number(totalRes?.count || 0),
+  };
 }
 
 async function updatePost(postId, updateData) {
   try {
-    return await knex("posts")
-      .where({ post_id: postId })
-      .update(updateData);
+    console.log("📝 Updating post:", postId, updateData);
+    return await knex("posts").where({ post_id: postId }).update(updateData);
   } catch (error) {
     console.error("Lỗi khi cập nhật bài viết:", error);
     throw new ApiError(500, "Lỗi khi truy vấn cơ sở dữ liệu", error);
@@ -101,9 +121,7 @@ async function updatePost(postId, updateData) {
 
 async function deletePost(postId) {
   try {
-    return await knex("posts")
-      .where({ post_id: postId })
-      .del();
+    return await knex("posts").where({ post_id: postId }).del();
   } catch (error) {
     console.error("Lỗi khi xoá bài viết:", error);
     throw new ApiError(500, "Lỗi khi truy vấn cơ sở dữ liệu", error);
@@ -157,6 +175,23 @@ async function getFavoritesByUser(userId) {
   }
 }
 
+async function checkSlugExists(slug) {
+  const existing = await knex("posts").where({ post_slug: slug }).first();
+  return !!existing;
+}
+
+async function getPostsByUserId(userId) {
+  try {
+    return await knex("posts")
+      .select("*")
+      .where({ user_id: userId })
+      .orderBy("post_create_at", "desc");
+  } catch (error) {
+    console.error("Lỗi khi truy vấn bài viết của người dùng:", error);
+    throw new ApiError(500, "Lỗi khi truy vấn cơ sở dữ liệu", error);
+  }
+}
+
 module.exports = {
   transaction,
   createPost,
@@ -168,5 +203,7 @@ module.exports = {
   checkFavorite,
   addFavorite,
   removeFavorite,
-  getFavoritesByUser
+  getFavoritesByUser,
+  checkSlugExists,
+  getPostsByUserId,
 };

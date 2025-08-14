@@ -121,7 +121,8 @@ router.delete("/:cmt_id", verifyToken, commentsController.deleteComment);
  *         description: Lỗi máy chủ
  */
 router.put("/:cmt_id", verifyToken, commentsController.updateComment);
-
+router.get("/user/:user_id", commentsController.getCommentByUserId);
+router.get("/", commentsController.getAllComments);
 module.exports = {
   setup(app) {
     app.use("/api/comments", router);

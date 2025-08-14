@@ -92,6 +92,16 @@ async function getLeaguesByPost(req, res, next) {
   }
 }
 
+async function getAllByPost(req, res, next) {
+  const { post_id } = req.params;
+  try {
+    const relations = await postRelService.getAllByPost(post_id);
+    return res.status(200).json(JSend.success(relations));
+  } catch (error) {
+    return next(error);
+  }
+}
+
 module.exports = {
   addPostPlayer,
   removePostPlayer,
@@ -102,4 +112,5 @@ module.exports = {
   addPostLeague,
   removePostLeague,
   getLeaguesByPost,
+  getAllByPost
 };

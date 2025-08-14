@@ -221,6 +221,19 @@ async function changePassword(req, res, next) {
   }
 }
 
+async function adminGetAllUsers(req, res, next) {
+ try {
+    if (req.user.role !== "admin")
+      return res.status(403).json(JSend.fail("Bạn không có quyền"));
+
+    const users = await userService.getAllUsers();
+    return res.json(JSend.success(users));
+  } catch (error) {
+    console.error("Lỗi khi lấy danh sách người dùng:", error);
+    return res.status(500).json(JSend.error("Lỗi máy chủ"));
+  }
+}
+
 module.exports = {
   registerUser,
   loginUser,
@@ -228,4 +241,5 @@ module.exports = {
   adminFindUser,
   userGetInfor,
   changePassword,
+  adminGetAllUsers
 };

@@ -232,6 +232,8 @@ router.post("/league/remove", verifyToken, controller.removePostLeague);
  */
 router.get("/league/:post_id", controller.getLeaguesByPost);
 
+router.get("/all/:post_id", controller.getAllByPost);
+
 module.exports = {
   setup(app) {
     app.use("/api/relations", router);

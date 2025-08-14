@@ -220,6 +220,7 @@ router.put("/me", verifyToken, usersController.updateUserInfor);
  *         description: Lỗi máy chủ
  */
 router.put("/change-password", verifyToken, usersController.changePassword);
+router.get("/", verifyToken, usersController.adminGetAllUsers);
 
 module.exports = {
   setup(app) {
