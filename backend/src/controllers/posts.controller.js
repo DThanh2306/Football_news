@@ -34,6 +34,7 @@ async function createPost(req, res, next) {
         post_content: post_content || "",
         post_status: "pending",
         post_slug: slug,
+        post_source_url: req.body.post_source_url || null,
         post_images: imagePaths,
         tag_id: tagArray,
         post_create_at: new Date(),
@@ -119,6 +120,47 @@ async function getAllPosts(req, res, next) {
     };
 
     const posts = await postService.getAllPosts(queryOptions);
+
+    return res.status(200).json(JSend.success(posts));
+  } catch (error) {
+    console.error("Lỗi khi lấy danh sách bài viết:", error.message);
+    return next(new ApiError(500, "Lỗi khi lấy danh sách bài viết"));
+  }
+}
+
+async function getPublicPosts(req, res, next) {
+  const { q, page = 1, limit = 10, ...rest } = req.query;
+
+  try {
+    const validFields = [
+      "post_id",
+      "user_id",
+      "post_title",
+      "post_content",
+      "post_status",
+      "post_slug",
+      "post_create_at",
+      "post_update_at"
+    ];
+
+    const filter = {};
+
+    for (const key in rest) {
+      if (validFields.includes(key)) {
+        filter[key] = rest[key];
+      }
+    }
+
+
+    const queryOptions = {
+      filter,
+      page: parseInt(page),
+      limit: parseInt(limit),
+      fuzzyFields: ["post_title", "post_content", "post_slug"],
+      q: q || null
+    };
+
+    const posts = await postService.getPublicPosts(queryOptions);
 
     return res.status(200).json(JSend.success(posts));
   } catch (error) {
@@ -297,5 +339,6 @@ module.exports = {
   reviewPost,
   toggleFavorite,
   getFavorites,
-  getPostByUserId
+  getPostByUserId,
+  getPublicPosts
 };

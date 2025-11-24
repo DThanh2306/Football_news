@@ -10,7 +10,7 @@ const postsController = require("../controllers/posts.controller");
  *   name: Posts
  *   description: Quản lý bài viết
  */
-
+router.get("/public", postsController.getPublicPosts);
 /**
  * @swagger
  * /posts/{post_id}/favorite:

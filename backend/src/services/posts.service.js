@@ -72,7 +72,6 @@ async function getPostById(postId) {
 async function getAllPosts({
   filter = {},
   page = 1,
-  limit = 10,
   fuzzyFields = [],
   q = null,
 }) {
@@ -95,9 +94,47 @@ async function getAllPosts({
   }
 
   query
-    .orderBy("post_create_at", "desc")
-    .limit(limit)
-    .offset((page - 1) * limit);
+    .orderBy("post_create_at", "desc");
+
+  const [data, totalRes] = await Promise.all([
+    query,
+    knex("posts").count("* as count").first(),
+  ]);
+  return {
+    items: data,
+    total: Number(totalRes?.count || 0),
+  };
+}
+
+async function getPublicPosts({
+  filter = {},
+  page = 1,
+  fuzzyFields = [],
+  q = null,
+}) {
+  const query = knex("posts")
+  .select("*")
+  .where("posts.post_status", "published")
+  .orderBy("post_create_at", "desc");
+
+  if (q && fuzzyFields.length > 0) {
+    query.where((builder) => {
+      fuzzyFields.forEach((field, idx) => {
+        if (idx === 0) {
+          builder.where(field, "ilike", `%${q}%`);
+        } else {
+          builder.orWhere(field, "ilike", `%${q}%`);
+        }
+      });
+    });
+  }
+
+  for (const key in filter) {
+    query.andWhere(key, filter[key]);
+  }
+
+  query
+    .orderBy("post_create_at", "desc");
 
   const [data, totalRes] = await Promise.all([
     query,
@@ -206,4 +243,5 @@ module.exports = {
   getFavoritesByUser,
   checkSlugExists,
   getPostsByUserId,
+  getPublicPosts
 };
