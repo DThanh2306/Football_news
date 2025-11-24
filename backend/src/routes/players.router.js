@@ -58,6 +58,7 @@ const playersController = require("../controllers/players.controller");
  *         description: Lỗi máy chủ
  */
 router.post("/", verifyToken, upload.single("player_img"), playersController.createPlayer);
+router.get('/club/:id', playersController.getPlayersByClub);
 
 /**
  * @swagger
