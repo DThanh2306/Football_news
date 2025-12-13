@@ -6,7 +6,7 @@
     </a-breadcrumb>
     <div class="flex items-center gap-3 mb-6">
       <i class="ri-chat-3-line text-2xl text-blue-600"></i>
-      <h1 class="text-2xl font-bold text-blue-700">Quản lý bình luận</h1>
+      <h1 class="text-2xl font-bold text-blue-700">Manage Comments</h1>
     </div>
     <a-table
       :columns="columns"
@@ -34,21 +34,21 @@
         <template v-if="column.key === 'actions'">
           <a-button type="link" size="small" @click="openDetail(record)">Chi tiết</a-button>
           <a-popconfirm
-            title="Bạn chắc chắn muốn xóa bình luận này?"
-            ok-text="Xóa"
-            cancel-text="Hủy"
+            title="Are you sure you want to delete this comment?"
+            ok-text="Delete"
+            cancel-text="Cancel"
             @confirm="handleDelete(record.cmt_id)"
           >
-            <a-button type="link" danger size="small">Xóa</a-button>
+            <a-button type="link" danger size="small">Delete</a-button>
           </a-popconfirm>
         </template>
       </template>
     </a-table>
 
-    <!-- Modal chi tiết bình luận -->
+    <!-- Comment detail modal -->
     <a-modal
       v-model:open="detailModalOpen"
-      title="Chi tiết bình luận"
+      title="Comment details"
       width="500px"
       :footer="null"
       destroyOnClose
@@ -65,11 +65,11 @@
           </div>
         </div>
         <div class="mb-2 text-gray-500 text-sm">
-          <span>Ngày bình luận: </span>
+          <span>Commented at: </span>
           <span class="font-semibold">{{ selectedComment.cmt_create_at }}</span>
         </div>
         <div class="mb-2">
-          <span class="font-semibold text-blue-700">Bài viết: </span>
+          <span class="font-semibold text-blue-700">Post: </span>
           <router-link
             :to="`/post/${selectedComment.post_id}`"
             class="text-blue-700 hover:underline"
@@ -78,7 +78,7 @@
           </router-link>
         </div>
         <div class="mb-4">
-          <span class="font-semibold text-blue-700">Nội dung bình luận:</span>
+          <span class="font-semibold text-blue-700">Comment content:</span>
           <div class="bg-blue-50 rounded p-3 mt-1 text-gray-800">
             {{ selectedComment.cmt_content }}
           </div>
@@ -129,7 +129,7 @@ async function handleDelete(id) {
     data.value = data.value.filter((c) => c.cmt_id !== id);
    
   } catch (error) {
-    console.error("Lỗi khi xoá bình luận:", error);
+    console.error("Failed to delete comment:", error);
   }
 }
 </script>

@@ -37,12 +37,7 @@
                   <h3 class="font-semibold text-lg mb-2">{{ post.post_title }}</h3>
                 </router-link>
 
-                <p class="text-gray-600 text-sm line-clamp-3">
-                  {{
-                    post.post_excerpt ||
-                    (post.post_content ? post.post_content.slice(0, 120) + '...' : '')
-                  }}
-                </p>
+                <p class="text-gray-600 text-sm line-clamp-3">{{ getPlainText(post.post_content).slice(0, 200) }}</p>
                 <router-link
                   :to="`/post/${post.post_slug}`"
                   class="text-blue-600 hover:underline text-sm mt-2 inline-block"
@@ -111,7 +106,7 @@ async function loadDefault() {
 
   error.value = ''
   try {
-    const res = await postsService.getAllPosts({ page: page.value, limit })
+    const res = await postsService.getPublicPosts({ page: page.value, limit })
     const data = res?.data || {}
     const items = Array.isArray(data.items) ? data.items : []
 
@@ -140,7 +135,7 @@ async function loadByLeague(slug) {
       return
     }
 
-    const res = await postsService.getAllPosts()
+    const res = await postsService.getPublicPosts()
     const all = Array.isArray(res?.data.items) ? res.data.items : []
 
     const result = []
@@ -187,7 +182,7 @@ async function load() {
     loading.value = true
     error.value = ''
     try {
-      const res = await postsService.getAllPosts({ q: keyword })
+      const res = await postsService.getPublicPosts({ q: keyword })
       newPosts.value = Array.isArray(res?.data?.items) ? res.data.items : res.data || []
     } catch {
       error.value = 'Không tìm thấy kết quả phù hợp.'
@@ -219,6 +214,11 @@ watch(() => route.fullPath, () => {
 
 onUnmounted(() => {
   window.removeEventListener('scroll', onScroll)
-})
+});
+
+  function getPlainText(html) {
+      if (!html) return "";
+      return html.replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim();
+    }
 
 </script>

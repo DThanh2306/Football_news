@@ -6,95 +6,164 @@
     </a-breadcrumb>
 
     <div class="flex justify-between items-center mb-4">
-      <h1 class="text-2xl font-bold text-blue-700">Quản lý bài viết</h1>
+      <h1 class="text-3xl font-bold text-blue-800 tracking-tight">Post Management</h1>
       <a-button type="primary" class="bg-blue-600 border-blue-600" @click="openCreate">
-        Thêm bài viết
+        Add new post
       </a-button>
     </div>
+    <!-- Filters -->
+    <div class="flex flex-wrap gap-3 items-center mb-4">
+      <!-- Search -->
+      <a-input
+        v-model:value="filters.search"
+        placeholder="Search title..."
+        class="w-60"
+        allow-clear
+        @input="applyFilters"
+      >
+        <template #prefix>
+          <i class="ri-search-line text-gray-500"></i>
+        </template>
+      </a-input>
 
-    <a-table
-      :columns="columns"
-      :data-source="posts"
-      :loading="loading"
-      :pagination="{ pageSize: 5 }"
-      row-key="post_id"
-      bordered
+      <!-- Status Filter -->
+      <a-select
+        v-model:value="filters.status"
+        class="w-40"
+        placeholder="Status"
+        allow-clear
+        @change="applyFilters"
+      >
+        <a-select-option value="pending">Pending</a-select-option>
+        <a-select-option value="published">Published</a-select-option>
+        <a-select-option value="draft">Draft</a-select-option>
+        <a-select-option value="rejected">Rejected</a-select-option>
+      </a-select>
+
+      <!-- Date Range -->
+      <a-range-picker v-model:value="filters.date" @change="applyFilters" class="w-72" />
+    </div>
+    <!-- Posts Table -->
+    <div
+      class="overflow-auto border rounded-lg shadow-sm bg-white overflow-y-auto"
+      style="max-height: calc(100vh - 220px)"
     >
-      <template #bodyCell="{ column, record }">
-        <template v-if="column.key === 'actions'">
-          <a-button type="link" size="small" @click="openDetail(record)">Xem chi tiết</a-button>
-          <a-popconfirm
-            title="Xóa bài viết này?"
-            ok-text="Xóa"
-            cancel-text="Hủy"
-            @confirm="handleDelete(record.post_id)"
-          >
-            <a-button type="link" danger size="small">Xóa</a-button>
-          </a-popconfirm>
-        </template>
+      <a-table
+        :columns="columns"
+        :data-source="posts"
+        :loading="loading"
+        :pagination="{ pageSize: 10 }"
+        row-key="post_id"
+        bordered
+      >
+        <template #bodyCell="{ column, record }">
+          <!-- Thumbnail -->
+          <template v-if="column.key === 'thumbnail'">
+            <img
+              :src="record.post_images?.[0] || '/default-thumb.jpg'"
+              class="w-14 h-14 object-cover rounded border shadow-sm"
+            />thanh
+          </template>
+          <template v-if="column.key === 'username'">
+            {{ record.username || 'Unknown' }}
+          </template>
 
-        <template v-else-if="column.key === 'post_status'">
-          <a-tag :color="statusColorMap[record.post_status]">
-            {{ statusLabelMap[record.post_status] || record.post_status }}
-          </a-tag>
-        </template>
-      </template>
-    </a-table>
+          <!-- Status -->
+          <template v-if="column.key === 'post_status'">
+            <a-tag :color="statusColorMap[record.post_status]" class="px-3 py-1 text-sm capitalize">
+              {{ statusLabelMap[record.post_status] }}
+            </a-tag>
+          </template>
 
+          <!-- Actions -->
+          <template v-if="column.key === 'actions'">
+            <div class="flex gap-2">
+              <a-button size="small" type="link" @click="openDetail(record)">
+                <i class="ri-edit-line text-base"></i> Detail
+              </a-button>
+
+              <a-popconfirm
+                title="You want to delete this post?"
+                ok-text="Delete"
+                cancel-text="Cancel"
+                @confirm="handleDelete(record.post_id)"
+              >
+                <a-button size="small" danger type="link">
+                  <i class="ri-delete-bin-6-line text-base"></i> Delete
+                </a-button>
+              </a-popconfirm>
+            </div>
+          </template>
+        </template>
+      </a-table>
+    </div>
+    <!-- Modal -->
     <a-modal
       v-model:open="detailModalOpen"
-      :title="selectedPost?.post_title || 'Chi tiết bài viết'"
-      width="700px"
+      :title="selectedPost?.post_title || 'Post Details'"
+      width="800px"
       :footer="null"
       destroyOnClose
     >
       <div v-if="selectedPost">
         <a-form layout="vertical" :model="selectedPost" name="updateForm" @finish="handleUpdate">
-          <a-form-item label="Tiêu đề">
-            <a-input v-model:value="selectedPost.post_title" />
-          </a-form-item>
+          <div class="grid grid-cols-2 gap-6">
+            <!-- LEFT COLUMN -->
+            <div>
+              <a-form-item label="Title" required>
+                <a-input v-model:value="selectedPost.post_title" size="large" />
+              </a-form-item>
 
-          <a-form-item label="Trạng thái">
-            <a-select v-model:value="selectedPost.post_status">
-              <a-select-option value="published">Đã đăng</a-select-option>
-              <a-select-option value="draft">Chờ duyệt</a-select-option>
-              <a-select-option value="rejected">Từ chối</a-select-option>
-            </a-select>
-          </a-form-item>
+              <a-form-item label="Status">
+                <a-select v-model:value="selectedPost.post_status" size="large">
+                  <a-select-option value="published">published</a-select-option>
+                  <a-select-option value="pending">pending</a-select-option>
+                  <a-select-option value="draft">draft</a-select-option>
+                  <a-select-option value="rejected">rejected</a-select-option>
+                </a-select>
+              </a-form-item>
 
-          <a-form-item v-if="selectedPost.post_status === 'rejected'" label="Lý do từ chối">
-            <a-input v-model:value="selectedPost.reject_reason" placeholder="Nhập lý do từ chối" />
-          </a-form-item>
+              <a-form-item v-if="selectedPost.post_status === 'rejected'" label="Reject Reason">
+                <a-input v-model:value="selectedPost.reject_reason" size="large" />
+              </a-form-item>
+            </div>
 
-          <a-form-item label="Nội dung">
+            <!-- RIGHT COLUMN (IMAGES) -->
+            <div>
+              <p class="font-semibold text-gray-700 mb-2">Images</p>
+              <input type="file" accept="image/*" @change="onImageChange" />
+
+              <div class="flex flex-wrap gap-3 mt-3">
+                <div
+                  v-for="(img, index) in selectedPost.post_images"
+                  :key="index"
+                  class="w-28 h-28 border rounded relative overflow-hidden shadow-sm"
+                >
+                  <img :src="img" class="w-full h-full object-cover" />
+                  <a-button
+                    size="small"
+                    danger
+                    class="absolute top-1 right-1"
+                    @click="removeImage(index)"
+                  >
+                    X
+                  </a-button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- CONTENT EDITOR -->
+          <a-form-item label="Content" class="mt-6">
             <quill-editor
               v-model:content="selectedPost.post_content"
               contentType="html"
-              style="min-height: 200px"
+              style="min-height: 240px"
             />
           </a-form-item>
 
-          <a-form-item label="Hình ảnh bài viết">
-            <input type="file" accept="image/*" @change="onImageChange" />
-            <div v-if="selectedPost.post_images?.length" class="flex flex-wrap gap-2 mt-3">
-              <div
-                v-for="(img, index) in selectedPost.post_images"
-                :key="index"
-                class="relative w-28 h-28 rounded border overflow-hidden"
-              >
-                <img :src="img" class="w-full h-full object-cover" />
-                <a-button
-                  size="small"
-                  danger
-                  class="absolute top-1 right-1 z-10"
-                  @click="removeImage(index)"
-                  >X</a-button
-                >
-              </div>
-            </div>
-          </a-form-item>
-
-          <div class="flex justify-end gap-2">
+          <!-- FOOTER BUTTONS -->
+          <div class="flex justify-end gap-2 mt-4">
             <a-button
               @click="
                 () => {
@@ -102,9 +171,11 @@
                   isCreating.value = false
                 }
               "
-              >Hủy</a-button
             >
-            <a-button type="primary" html-type="submit">Lưu thay đổi</a-button>
+              Cancel
+            </a-button>
+
+            <a-button type="primary" html-type="submit"> Save </a-button>
           </div>
         </a-form>
       </div>
@@ -126,43 +197,52 @@ const detailModalOpen = ref(false)
 const selectedPost = ref(null)
 const isCreating = ref(false)
 
+// Status maps
 const statusLabelMap = {
-  published: 'Đã đăng',
-  draft: 'Nháp',
-  rejected: 'Từ chối',
+  published: 'published',
+  pending: 'pending',
+  draft: 'draft',
+  rejected: 'rejected',
 }
 
 const statusColorMap = {
   published: 'green',
+  pending: 'blue',
   draft: 'orange',
   rejected: 'red',
 }
 
 const columns = [
-  { title: 'Tiêu đề', dataIndex: 'post_title', key: 'post_title' },
-  { title: 'Trạng thái', dataIndex: 'post_status', key: 'post_status' },
+  { title: 'Title', dataIndex: 'post_title', key: 'post_title' },
   {
-    title: 'Ngày đăng',
+    title: 'Author',
+    dataIndex: 'username',
+    key: 'username',
+    customRender: ({ record }) => record.username || 'Unknown',
+  },
+
+  { title: 'Status', dataIndex: 'post_status', key: 'post_status' },
+  {
+    title: 'Posted At',
     dataIndex: 'post_create_at',
     key: 'post_create_at',
     customRender: ({ text }) => dayjs(text).format('HH:mm DD/MM/YYYY'),
   },
   {
-    title: 'Ngày duyệt',
+    title: 'Updated At',
     dataIndex: 'post_update_at',
     key: 'post_update_at',
     customRender: ({ text }) => dayjs(text).format('HH:mm DD/MM/YYYY'),
   },
-  { title: 'Thao tác', key: 'actions' },
+  { title: 'Actions', key: 'actions' },
 ]
 
-const fetchPosts = async () => {
+// Fetch posts
+const fetchPosts = async (params = {}) => {
   loading.value = true
   try {
-    const res = await postsService.getAllPosts({ limit: 100 })
+    const res = await postsService.getAllPosts(params)
     posts.value = Array.isArray(res.data?.items) ? res.data.items : []
-  } catch {
-    message.error('Không thể tải bài viết!')
   } finally {
     loading.value = false
   }
@@ -171,7 +251,7 @@ const fetchPosts = async () => {
 const openCreate = () => {
   selectedPost.value = {
     post_title: '',
-    post_status: 'published',
+    post_status: 'pending',
     post_content: '',
     post_images: [],
   }
@@ -184,7 +264,13 @@ const openDetail = (record) => {
     ...record,
     post_images: Array.isArray(record.post_images) ? [...record.post_images] : [],
   }
+  isCreating.value = false
   detailModalOpen.value = true
+}
+
+const closeModal = () => {
+  detailModalOpen.value = false
+  isCreating.value = false
 }
 
 const onImageChange = (e) => {
@@ -193,9 +279,6 @@ const onImageChange = (e) => {
 
   const reader = new FileReader()
   reader.onload = () => {
-    if (!selectedPost.value.post_images) {
-      selectedPost.value.post_images = []
-    }
     selectedPost.value.post_images.push(reader.result)
   }
   reader.readAsDataURL(file)
@@ -205,52 +288,72 @@ const removeImage = (index) => {
   selectedPost.value.post_images.splice(index, 1)
 }
 
+// UPDATE + REVIEW handling
 const handleUpdate = async () => {
   try {
+    const p = selectedPost.value
+
     const payload = {
-      post_id: selectedPost.value.post_id,
-      post_title: selectedPost.value.post_title,
-      post_content: selectedPost.value.post_content,
-      post_slug: selectedPost.value.post_slug,
-      post_images: selectedPost.value.post_images,
-      tag_id: selectedPost.value.tag_id || [],
+      post_id: p.post_id,
+      post_title: p.post_title,
+      post_content: p.post_content,
+      post_slug: p.post_slug,
+      post_images: p.post_images,
+      tag_id: p.tag_id || [],
     }
 
+    // CREATE
     if (isCreating.value) {
-      payload.post_status = selectedPost.value.post_status
-      const res = await postsService.createPost(payload)
-      const newPost = res?.data || res
-      posts.value.unshift(newPost)
-      message.success('Đã thêm bài viết')
-    } else {
-      await postsService.updatePost(payload.post_id, payload)
-
-      if (selectedPost.value.post_status === 'rejected' && !selectedPost.value.reject_reason) {
-        message.warning('Vui lòng nhập lý do từ chối')
-        return
-      }
-
-      await postsService.reviewPost(payload.post_id, {
-        action: selectedPost.value.post_status === 'published' ? 'approve' : 'reject',
-        reason: selectedPost.value.reject_reason || ''
+      const res = await postsService.createPost({
+        post_title: p.post_title,
+        post_content: p.post_content,
+        images: p.post_images,
       })
 
-      const idx = posts.value.findIndex(p => p.post_id === payload.post_id)
-      if (idx !== -1)
-        posts.value[idx] = {
-          ...posts.value[idx],
-          ...payload,
-          post_status: selectedPost.value.post_status
-        }
-
-      message.success('Cập nhật thành công')
+      posts.value.unshift(res?.data || res)
+      message.success('Post created successfully!')
+      closeModal()
+      return
     }
 
-    detailModalOpen.value = false
-    isCreating.value = false
+    // UPDATE CONTENT
+    await postsService.updatePost(payload.post_id, payload)
+
+    const newStatus = p.post_status
+
+    // REVIEW LOGIC
+    if (newStatus === 'published') {
+      await postsService.reviewPost(p.post_id, { action: 'approve' })
+    } else if (newStatus === 'draft') {
+      await postsService.reviewPost(p.post_id, { action: 'draft' })
+    } else if (newStatus === 'rejected') {
+      if (!p.reject_reason) {
+        message.warning('Reject reason is required')
+        return
+      }
+      await postsService.reviewPost(p.post_id, {
+        action: 'reject',
+        reason: p.reject_reason,
+      })
+    }
+    // NO REVIEW FOR pending → keep pending
+
+    // APPLY UI UPDATE
+    const idx = posts.value.findIndex((x) => x.post_id === payload.post_id)
+    if (idx !== -1) {
+      posts.value[idx] = {
+        ...posts.value[idx],
+        ...payload,
+        post_status: newStatus,
+        reject_reason: p.reject_reason || null,
+      }
+    }
+
+    message.success('Update successful')
+    closeModal()
   } catch (err) {
-    console.error('Lỗi:', err)
-    message.error(isCreating.value ? 'Thêm thất bại!' : 'Cập nhật thất bại!')
+    console.error('Error:', err)
+    message.error('Fail to update!')
   }
 }
 
@@ -258,10 +361,29 @@ const handleDelete = async (post_id) => {
   try {
     await postsService.deletePost(post_id)
     posts.value = posts.value.filter((p) => p.post_id !== post_id)
-    message.success('Đã xóa bài viết')
+    message.success('Post deleted successfully!')
   } catch {
-    message.error('Xóa thất bại!')
+    message.error('Post delete failed!')
   }
+}
+const filters = ref({
+  search: '',
+  status: null,
+  date: null,
+})
+
+const applyFilters = () => {
+  let params = {}
+
+  if (filters.value.search) params.q = filters.value.search
+  if (filters.value.status) params.post_status = filters.value.status
+
+  if (filters.value.date) {
+    params.start = filters.value.date[0]
+    params.end = filters.value.date[1]
+  }
+
+  fetchPosts(params)
 }
 
 onMounted(fetchPosts)

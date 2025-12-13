@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 import HomePage from '@/views/HomePage.vue'
 import LoginForm from '@/components/LoginForm.vue'
 import PostDetail from '@/views/PostDetail.vue'
@@ -23,8 +24,8 @@ const routes = [
   { path: '/login', name: 'login', component: LoginForm },
   { path: '/post/:slug', name: 'postDetail', component: PostDetail },
   { path: '/schedule', name: 'schedule', component: SchedulePage },
-  {path: '/profile', name: 'profile', component: ProfilePage },
-  {path: '/posts', name: 'posts', component: SearchResult },
+  { path: '/profile', name: 'profile', component: ProfilePage },
+  { path: '/posts', name: 'posts', component: SearchResult },
   { path: '/league/:slug', name: 'homeLeague', component: HomePage, props: true },
 
   {
@@ -37,16 +38,30 @@ const routes = [
       { path: 'leagues', name: 'adminLeagues', component: AdminLeagues },
       { path: 'clubs', name: 'adminClubs', component: AdminClubs },
       { path: 'comments', name: 'adminComments', component: AdminComments },
+      {
+        path: 'clubs/:id/players',
+        name: 'adminClubPlayers',
+        component: AdminPlayers,
+        props: true,
+      },
       { path: 'players', name: 'adminPlayers', component: AdminPlayers },
       // { path: 'matches', name: 'adminMatches', component: AdminMatches },
       // { path: 'settings', name: 'adminSettings', component: AdminSettings }
-    ]
-  }
+    ],
+  },
 ]
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
-  routes
+  routes,
+})
+
+router.beforeEach((to, from, next) => {
+  const auth = useAuthStore()
+  // Trang admin cho phép vào, nhưng quyền sửa sẽ kiểm tra ở UI theo role
+  // Nếu muốn chặn hẳn ai không có token khỏi admin, bật đoạn dưới:
+  // if (to.path.startsWith('/admin') && !auth.token) return next({ name: 'login' })
+  next()
 })
 
 export default router

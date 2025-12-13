@@ -6,8 +6,8 @@
     </a-breadcrumb>
     <div class="flex items-center gap-3 mb-6">
       <i class="ri-calendar-event-line text-2xl text-blue-600"></i>
-      <h1 class="text-2xl font-bold text-blue-700">Quản lý lịch thi đấu</h1>
-      <a-button type="primary" class="ml-auto bg-blue-600 border-blue-600">Thêm trận đấu</a-button>
+      <h1 class="text-2xl font-bold text-blue-700">Manage Matches</h1>
+      <a-button type="primary" class="ml-auto bg-blue-600 border-blue-600">Add match</a-button>
     </div>
     <a-table
       :columns="columns"
@@ -24,8 +24,8 @@
           <img :src="record.awayLogo" alt="away" class="w-8 h-8 object-contain rounded border" />
         </template>
         <template v-if="column.key === 'actions'">
-          <a-button type="link" size="small">Sửa</a-button>
-          <a-button type="link" danger size="small">Xóa</a-button>
+          <a-button type="link" size="small">Edit</a-button>
+          <a-button type="link" danger size="small">Delete</a-button>
         </template>
       </template>
     </a-table>

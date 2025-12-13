@@ -50,4 +50,23 @@ export const usersService = {
     });
     return res.data;
   },
+
+  async adminUpdateUser(username, updateData) {
+    const res = await axios.put(`${BASE_URL}/${encodeURIComponent(username)}`, updateData);
+    return res.data;
+  },
+
+  async adminCreateUser(payload) {
+    const res = await axios.post(`${BASE_URL}`, payload);
+    return res.data;
+  },
+
+  async assignLeagueManager({ user_id, league_id }) {
+    const res = await axios.post(`/league-managers`, { user_id, league_id });
+    return res.data;
+  },
+  async removeLeagueManager(id) {
+    const res = await axios.delete(`/league-managers/${id}`);
+    return res.data;
+  },
 };
