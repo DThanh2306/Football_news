@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { verifyToken } = require("../middlewares/auth.middleware");
+const { authorize } = require("../middlewares/authorize.middleware");
 const clubsController = require("../controllers/clubs.controller");
 const upload = require("../middlewares/upload.middleware");
 
@@ -39,7 +40,7 @@ const upload = require("../middlewares/upload.middleware");
  *       201:
  *         description: Tạo CLB thành công
  */
-router.post("/", verifyToken, upload.single("club_img"), clubsController.createClub);
+router.post("/", verifyToken, authorize("clubs", "create"), upload.single("club_img"), clubsController.createClub);
 
 /**
  * @swagger
@@ -123,7 +124,7 @@ router.get("/:id", clubsController.getClubById);
  *       500:
  *         description: Lỗi máy chủ
  */
-router.put("/:id", verifyToken, upload.single("club_img"), clubsController.updateClub);
+router.put("/:id", verifyToken, authorize("clubs", "update"), upload.single("club_img"), clubsController.updateClub);
 
 /**
  * @swagger
@@ -143,7 +144,7 @@ router.put("/:id", verifyToken, upload.single("club_img"), clubsController.updat
  *       200:
  *         description: Xoá thành công
  */
-router.delete("/:id", verifyToken, clubsController.deleteClub);
+router.delete("/:id", verifyToken, authorize("clubs", "delete"), clubsController.deleteClub);
 
 module.exports = {
   setup(app) {

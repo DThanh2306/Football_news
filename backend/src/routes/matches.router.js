@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { verifyToken } = require("../middlewares/auth.middleware");
+const { authorize } = require("../middlewares/authorize.middleware");
 const matchesController = require("../controllers/matches.controller");
 
 /**
@@ -61,7 +62,7 @@ router.get("/:match_id", matchesController.getMatchById);
  *       201:
  *         description: Tạo thành công
  */
-router.post("/", verifyToken, matchesController.createMatch);
+router.post("/", verifyToken, authorize("matches", "create"), matchesController.createMatch);
 
 /**
  * @swagger
@@ -72,7 +73,7 @@ router.post("/", verifyToken, matchesController.createMatch);
  *     security:
  *       - bearerAuth: []
  */
-router.put("/:match_id", verifyToken, matchesController.updateMatch);
+router.put("/:match_id", verifyToken, authorize("matches", "update"), matchesController.updateMatch);
 
 /**
  * @swagger
@@ -83,7 +84,7 @@ router.put("/:match_id", verifyToken, matchesController.updateMatch);
  *     security:
  *       - bearerAuth: []
  */
-router.delete("/:match_id", verifyToken, matchesController.deleteMatch);
+router.delete("/:match_id", verifyToken, authorize("matches", "delete"), matchesController.deleteMatch);
 
 module.exports = {
   setup(app) {

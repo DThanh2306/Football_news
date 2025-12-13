@@ -15,9 +15,7 @@ async function createClub(req, res, next) {
   }
   league_ids = league_ids.map(Number);
 
-  if (req.user.role !== "admin")
-    return res.status(403).json(JSend.fail("Bạn không có quyền tạo CLB"));
-  if (!club_name || !club_img)
+    if (!club_name || !club_img)
     return res.status(400).json(JSend.fail("Thiếu tên hoặc ảnh CLB"));
 
   try {
@@ -72,9 +70,7 @@ async function updateClub(req, res, next) {
   const { id } = req.params;
   let { club_name, club_img, league_ids } = req.body || {};
 
-  if (req.user.role !== "admin")
-    return res.status(403).json(JSend.fail("Bạn không có quyền cập nhật CLB"));
-
+  
   if (req.file) {
     club_img = `/uploads/clubs/${req.file.filename}`;
   }
@@ -117,9 +113,7 @@ async function updateClub(req, res, next) {
 
 async function deleteClub(req, res, next) {
   const { id } = req.params;
-  if (req.user.role !== "admin")
-    return res.status(403).json(JSend.fail("Bạn không có quyền xoá CLB"));
-  try {
+    try {
     const club = await clubService.getClubById(id);
     if (!club) return res.status(404).json(JSend.fail("Không tìm thấy CLB"));
     await clubService.deleteClub(id);

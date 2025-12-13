@@ -35,10 +35,7 @@ async function registerUser(req, res, next) {
   }
 }
 async function adminFindUser(req, res, next) {
-  if (req.user.role !== "admin") {
-    return res.status(403).json(JSend.fail("Bạn không có quyền truy cập"));
-  }
-
+  // Quyền đã được kiểm tra bởi authorize("users","read") ở router
   const { username, email } = req.query || {};
 
   try {
@@ -61,7 +58,7 @@ async function adminFindUser(req, res, next) {
 }
 
 async function loginUser(req, res, next) {
-  const { username, password } = req.body || {};
+  const { username, password, role } = req.body || {};
   console.log("loginData:", req.body, "JWT_SECRET:", process.env.JWT_SECRET);
 
   if (!username || !password) {
@@ -94,7 +91,7 @@ async function loginUser(req, res, next) {
     const token = jwt.sign(payload, process.env.JWT_SECRET, {
       expiresIn: "4h",
     });
-
+    console.log("Login successfull:", "username:", username, "Role:", user.role);
     return res.status(200).json(
       JSend.success({
         message: "Đăng nhập thành công",
@@ -169,7 +166,7 @@ async function changePassword(req, res, next) {
   }
 
   try {
-    if (req.user.role === "admin" && targetUsername) {
+    if (targetUsername && targetUsername !== req.user.username) {
       const [targetUser] = await userService.findByUsernameOrEmail(targetUsername, null);
 
       if (!targetUser) {
@@ -187,9 +184,6 @@ async function changePassword(req, res, next) {
       return res.status(200).json(JSend.success("Đã reset mật khẩu thành công"));
     }
 
-    if (targetUsername && req.user.role !== "admin") {
-      return res.status(403).json(JSend.fail("Bạn không có quyền reset mật khẩu người khác"));
-    }
 
     if (!oldPassword) {
       return res.status(400).json(JSend.fail("Thiếu mật khẩu cũ"));
@@ -223,14 +217,92 @@ async function changePassword(req, res, next) {
 
 async function adminGetAllUsers(req, res, next) {
  try {
-    if (req.user.role !== "admin")
-      return res.status(403).json(JSend.fail("Bạn không có quyền"));
-
+    // Quyền đã được kiểm tra bởi authorize("users","read") ở router
     const users = await userService.getAllUsers();
     return res.json(JSend.success(users));
   } catch (error) {
     console.error("Lỗi khi lấy danh sách người dùng:", error);
     return res.status(500).json(JSend.error("Lỗi máy chủ"));
+  }
+}
+
+async function adminUpdateUser(req, res, next) {
+  try {
+    const username = req.params.username;
+    if (!username) return res.status(400).json(JSend.fail("Thiếu username"));
+
+    const { email, phone, address, avatar, role } = req.body || {};
+    const updateData = {};
+    if (email) updateData.email = email;
+    if (phone) updateData.phone = phone;
+    if (address) updateData.address = address;
+    if (avatar) updateData.avatar = avatar;
+    if (role) updateData.role = role;
+
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json(JSend.fail("Không có dữ liệu để cập nhật"));
+    }
+
+    const updated = await userService.updateUserByUsername(username, updateData);
+    if (!updated) return res.status(404).json(JSend.fail("Không tìm thấy người dùng"));
+
+    return res.status(200).json(JSend.success("Cập nhật người dùng thành công"));
+  } catch (error) {
+    console.error("Lỗi adminUpdateUser:", error.message);
+    return next(new ApiError(500, "Lỗi cập nhật người dùng"));
+  }
+}
+
+async function adminCreateUser(req, res, next) {
+  const { username, email, password, role, phone, address, avatar } = req.body || {};
+  if (!username || !email || !password) {
+    return res.status(400).json(JSend.fail("Missing username, email or password"));
+  }
+  try {
+    const existing = await userService.existingUser(username, email);
+    if (existing) {
+      return res.status(400).json(JSend.fail("Username or email already exists"));
+    }
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+    const userData = {
+      username,
+      email,
+      password: hashedPassword,
+      created_at: new Date(),
+    };
+    await userService.registerUser(userData);
+
+    // Fetch the created user
+    const createdArr = await userService.findByUsernameOrEmail(username, email);
+    const created = Array.isArray(createdArr) ? createdArr[0] : createdArr;
+    if (!created) {
+      return res.status(500).json(JSend.error("Failed to create user"));
+    }
+
+    // Optional: update profile/role after creation
+    const updateData = {};
+    if (role) updateData.role = role;
+    if (phone) updateData.phone = phone;
+    if (address) updateData.address = address;
+    if (avatar) updateData.avatar = avatar;
+    if (Object.keys(updateData).length > 0) {
+      await userService.updateUserByUsername(username, updateData);
+      // refresh created info (best-effort)
+      const updatedArr = await userService.findByUsernameOrEmail(username, email);
+      if (Array.isArray(updatedArr) && updatedArr[0]) {
+        created.username = updatedArr[0].username;
+        created.email = updatedArr[0].email;
+        created.role = updatedArr[0].role;
+        created.phone = updatedArr[0].phone;
+        created.address = updatedArr[0].address;
+        created.avatar = updatedArr[0].avatar;
+      }
+    }
+
+    return res.status(201).json(JSend.success({ user: created }));
+  } catch (error) {
+    console.error("Admin create user error:", error);
+    return next(new ApiError(500, "Failed to create user"));
   }
 }
 
@@ -241,5 +313,7 @@ module.exports = {
   adminFindUser,
   userGetInfor,
   changePassword,
-  adminGetAllUsers
+  adminGetAllUsers,
+  adminUpdateUser,
+  adminCreateUser,
 };

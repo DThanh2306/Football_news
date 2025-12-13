@@ -79,10 +79,7 @@ async function deleteComment(req, res, next) {
       return res.status(404).json(JSend.fail("Không tìm thấy bình luận"));
     }
 
-    if (req.user.role !== "admin" && req.user.user_id !== comment.user_id) {
-      return res.status(403).json(JSend.fail("Bạn không có quyền xoá bình luận này"));
-    }
-
+    
     await commentService.deleteComment(cmt_id);
 
     return res.status(200).json(JSend.success("Xoá bình luận thành công"));
@@ -107,10 +104,7 @@ async function updateComment(req, res, next) {
       return res.status(404).json(JSend.fail("Không tìm thấy bình luận"));
     }
 
-    if (req.user.role !== "admin" && req.user.user_id !== comment.user_id) {
-      return res.status(403).json(JSend.fail("Bạn không có quyền cập nhật bình luận này"));
-    }
-
+    
     await commentService.updateComment(cmt_id, cmt_content);
 
     return res.status(200).json(JSend.success("Cập nhật bình luận thành công"));

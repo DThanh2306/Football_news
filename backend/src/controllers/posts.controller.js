@@ -180,10 +180,6 @@ async function updatePost(req, res, next) {
       return res.status(404).json(JSend.fail("Không tìm thấy bài viết"));
     }
 
-    if (req.user.role !== "admin" && req.user.user_id !== post.user_id) {
-      return res.status(403).json(JSend.fail("Bạn không có quyền cập nhật bài viết này"));
-    }
-
     const updateData = {};
 
     if (post_title) updateData.post_title = post_title;
@@ -220,10 +216,6 @@ async function deletePost(req, res, next) {
       return res.status(404).json(JSend.fail("Không tìm thấy bài viết"));
     }
 
-    if (req.user.role !== "admin" && req.user.user_id !== post.user_id) {
-      return res.status(403).json(JSend.fail("Bạn không có quyền xoá bài viết này"));
-    }
-
     await postService.deletePost(post_id);
 
     return res.status(200).json(JSend.success("Xoá bài viết thành công"));
@@ -236,10 +228,6 @@ async function deletePost(req, res, next) {
 async function reviewPost(req, res, next) {
   const { post_id } = req.params;
   const { action, reason } = req.body;
-
-  if (req.user.role !== "admin") {
-    return res.status(403).json(JSend.fail("Bạn không có quyền duyệt bài viết"));
-  }
 
   if (!["approve", "reject", "draft"].includes(action)) {
     return res.status(400).json(JSend.fail("Hành động không hợp lệ"));

@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { verifyToken } = require("../middlewares/auth.middleware");
+const { authorize } = require("../middlewares/authorize.middleware");
 const tagsController = require("../controllers/tags.controller");
 
 /**
@@ -72,7 +73,7 @@ router.get("/:tag_id", tagsController.getTagById);
  *       403: { description: Không có quyền }
  *       500: { description: Lỗi máy chủ }
  */
-router.post("/", verifyToken, tagsController.createTag);
+router.post("/", verifyToken, authorize("tags", "create"), tagsController.createTag);
 
 /**
  * @swagger
@@ -100,7 +101,7 @@ router.post("/", verifyToken, tagsController.createTag);
  *       404: { description: Không tìm thấy tag }
  *       500: { description: Lỗi máy chủ }
  */
-router.put("/:tag_id", verifyToken, tagsController.updateTag);
+router.put("/:tag_id", verifyToken, authorize("tags", "update"), tagsController.updateTag);
 
 /**
  * @swagger
@@ -120,7 +121,7 @@ router.put("/:tag_id", verifyToken, tagsController.updateTag);
  *       404: { description: Không tìm thấy tag }
  *       500: { description: Lỗi máy chủ }
  */
-router.delete("/:tag_id", verifyToken, tagsController.deleteTag);
+router.delete("/:tag_id", verifyToken, authorize("tags", "delete"), tagsController.deleteTag);
 
 module.exports = {
   setup(app) {

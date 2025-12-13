@@ -9,10 +9,24 @@ function usersTable() {
 async function registerUser(userData) {
   try {
     await usersTable().insert(userData);
-    return JSend.success({ message: "Người dùng đăng ký thành công" });
+    return JSend.success({ message: "User registered successfully" });
   } catch (error) {
-    console.error("Lỗi khi đăng ký người dùng: ", error);
-    throw new ApiError(500, "Lỗi khi truy vấn cơ sở dữ liệu", error);
+    // Handle sequence out-of-sync for Postgres: unique violation on user_id
+    if (error?.code === '23505' && /\(user_id\)/.test(error?.detail || '')) {
+      try {
+        const [{ max }] = await knex('users').max('user_id as max');
+        const nextVal = (Number(max) || 0) + 1;
+        // Attempt to fix sequence for postgres
+        await knex.raw("SELECT setval(pg_get_serial_sequence('users','user_id'), ?)", [nextVal]);
+        // retry once
+        await usersTable().insert(userData);
+        return JSend.success({ message: "User registered successfully" });
+      } catch (e2) {
+        console.error('Retry after sequence fix failed:', e2);
+      }
+    }
+    console.error("Error registering user: ", error);
+    throw new ApiError(500, "Database query error", error);
   }
 }
 
@@ -91,10 +105,20 @@ async function updateUserInfor(user_id, updateData) {
   }
 }
 
+async function updateUserByUsername(username, updateData) {
+  try {
+    return await knex("users").where({ username }).update(updateData);
+  } catch (error) {
+    console.error("Lỗi khi cập nhật người dùng theo username:", error);
+    throw new ApiError(500, "Lỗi khi truy vấn cơ sở dữ liệu", error);
+  }
+}
+
 module.exports = {
   registerUser,
   findByUsernameOrEmail,
   existingUser,
   updateUserInfor,
+  updateUserByUsername,
   getAllUsers
 };

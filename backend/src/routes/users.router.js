@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { verifyToken } = require("../middlewares/auth.middleware");
+const { authorize } = require("../middlewares/authorize.middleware");
 const usersController = require("../controllers/users.controller");
 
 /**
@@ -115,7 +116,7 @@ router.post("/login", usersController.loginUser);
  *       404:
  *         description: Không tìm thấy người dùng
  */
-router.get("/search", verifyToken, usersController.adminFindUser);
+router.get("/search", verifyToken, authorize("users", "read"), usersController.adminFindUser);
 
 /**
  * @swagger
@@ -219,8 +220,17 @@ router.put("/me", verifyToken, usersController.updateUserInfor);
  *       500:
  *         description: Lỗi máy chủ
  */
-router.put("/change-password", verifyToken, usersController.changePassword);
-router.get("/", verifyToken, usersController.adminGetAllUsers);
+// Nếu có targetUsername => cần quyền cập nhật user khác
+router.put("/change-password", verifyToken, (req, res, next) => {
+  if (req.body?.targetUsername && req.body?.targetUsername !== req.user?.username) {
+    return authorize("users", "update")(req, res, next);
+  }
+  next();
+}, usersController.changePassword);
+router.get("/", verifyToken, authorize("users", "read"), usersController.adminGetAllUsers);
+router.put("/:username", verifyToken, authorize("users", "update"), usersController.adminUpdateUser);
+// Admin create user
+router.post("/", verifyToken, authorize("users", "create"), usersController.adminCreateUser);
 
 module.exports = {
   setup(app) {

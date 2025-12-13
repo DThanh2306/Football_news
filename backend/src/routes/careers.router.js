@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { verifyToken } = require("../middlewares/auth.middleware");
+const { authorize } = require("../middlewares/authorize.middleware");
 const careersController = require("../controllers/careers.controller");
 
 /**
@@ -144,11 +145,11 @@ const careersController = require("../controllers/careers.controller");
  *         description: Không tìm thấy
  */
 
-router.post("/", verifyToken, careersController.createCareer);
+router.post("/", verifyToken, authorize("careers", "create"), careersController.createCareer);
 router.get("/", careersController.getAllCareers);
 router.get("/:player_id", careersController.getCareerById);
-router.put("/:id", verifyToken, careersController.updateCareer);
-router.delete("/:id", verifyToken, careersController.deleteCareer);
+router.put("/:id", verifyToken, authorize("careers", "update"), careersController.updateCareer);
+router.delete("/:id", verifyToken, authorize("careers", "delete"), careersController.deleteCareer);
 
 module.exports = {
   setup(app) {

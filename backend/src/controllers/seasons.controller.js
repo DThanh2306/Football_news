@@ -62,9 +62,6 @@ async function updateSeason(req, res, next) {
   const { id } = req.params;
   const { league_id, start_date, end_date } = req.body || {};
 
-  if (req.user.role !== "admin")
-    return res.status(403).json(JSend.fail("Bạn không có quyền"));
-
   try {
     const season = await seasonService.getSeasonById(id);
     if (!season) return res.status(404).json(JSend.fail("Không tìm thấy mùa giải"));

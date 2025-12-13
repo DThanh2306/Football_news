@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const upload = require("../middlewares/upload.middleware");
 const { verifyToken } = require("../middlewares/auth.middleware");
+const { authorize } = require("../middlewares/authorize.middleware");
 const playersController = require("../controllers/players.controller");
 
 /**
@@ -57,7 +58,7 @@ const playersController = require("../controllers/players.controller");
  *       500:
  *         description: Lỗi máy chủ
  */
-router.post("/", verifyToken, upload.single("player_img"), playersController.createPlayer);
+router.post("/", verifyToken, authorize("players", "create"), upload.single("player_img"), playersController.createPlayer);
 router.get('/club/:id', playersController.getPlayersByClub);
 
 /**
@@ -128,7 +129,7 @@ router.get("/:id", playersController.getPlayerById);
  *       403: { description: Không có quyền }
  *       404: { description: Không tìm thấy cầu thủ }
  */
-router.put("/:id",verifyToken, upload.single("player_img"), playersController.updatePlayer);
+router.put("/:id", verifyToken, authorize("players", "update"), upload.single("player_img"), playersController.updatePlayer);
 module.exports = {
   setup(app) {
     app.use("/api/players", router);

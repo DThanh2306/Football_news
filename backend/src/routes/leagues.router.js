@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { verifyToken } = require("../middlewares/auth.middleware");
+const { authorize } = require("../middlewares/authorize.middleware");
 const leaguesController = require("../controllers/leagues.controller");
 
 /**
@@ -35,7 +36,7 @@ const leaguesController = require("../controllers/leagues.controller");
  *       500:
  *         description: Lỗi máy chủ
  */
-router.post("/", verifyToken, leaguesController.createLeague);
+router.post("/", verifyToken, authorize("leagues", "create"), leaguesController.createLeague);
 
 /**
  * @swagger
@@ -109,7 +110,7 @@ router.get("/:id", leaguesController.getLeagueWithDetails);
  *       404:
  *         description: Không tìm thấy
  */
-router.put("/:id", verifyToken, leaguesController.updateLeague);
+router.put("/:id", verifyToken, authorize("leagues", "update"), leaguesController.updateLeague);
 
 /**
  * @swagger
@@ -136,7 +137,7 @@ router.put("/:id", verifyToken, leaguesController.updateLeague);
  *       500:
  *         description: Lỗi máy chủ
  */
-router.delete("/:id", verifyToken, leaguesController.deleteLeague);
+router.delete("/:id", verifyToken, authorize("leagues", "delete"), leaguesController.deleteLeague);
 
 module.exports = {
   setup(app) {

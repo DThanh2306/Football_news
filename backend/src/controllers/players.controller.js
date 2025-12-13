@@ -16,9 +16,7 @@ async function createPlayer(req, res, next) {
   } = req.body || {};
   const player_img = req.file ? `/uploads/players/${req.file.filename}` : null;
 
-  if (req.user.role !== "admin")
-    return res.status(403).json(JSend.fail("Bạn không có quyền tạo cầu thủ"));
-  if (!player_name || !player_img)
+    if (!player_name || !player_img)
     return res.status(400).json(JSend.fail("Thiếu tên hoặc ảnh cầu thủ"));
 
   try {
@@ -94,11 +92,6 @@ async function updatePlayer(req, res, next) {
     ? `/uploads/players/${req.file.filename}`
     : undefined;
 
-  if (req.user.role !== "admin")
-    return res
-      .status(403)
-      .json(JSend.fail("Bạn không có quyền cập nhật cầu thủ"));
-
   try {
     const player = await playerService.getPlayerById(id);
     if (!player)
@@ -131,9 +124,7 @@ async function updatePlayer(req, res, next) {
 
 async function deletePlayer(req, res, next) {
   const { id } = req.params;
-  if (req.user.role !== "admin")
-    return res.status(403).json(JSend.fail("Bạn không có quyền xoá cầu thủ"));
-
+  
   try {
     const player = await playerService.getPlayerById(id);
     if (!player)

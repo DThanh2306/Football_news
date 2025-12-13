@@ -6,10 +6,7 @@ const leagueService = require("../services/leagues.service");
 async function createLeague(req, res, next) {
   const { league_name, league_img } = req.body || {};
 
-  if (req.user.role !== "admin") {
-    return res.status(403).json(JSend.fail("Bạn không có quyền tạo giải đấu"));
-  }
-
+  
   if (!league_name || !league_img) {
     return res.status(400).json(JSend.fail("Thiếu tên hoặc ảnh giải đấu"));
   }
@@ -80,10 +77,7 @@ async function updateLeague(req, res, next) {
   const { id } = req.params;
   const { league_name, league_img } = req.body;
 
-  if (req.user.role !== "admin") {
-    return res.status(403).json(JSend.fail("Bạn không có quyền cập nhật giải đấu"));
-  }
-
+  
   if (!league_name && !league_img) {
     return res.status(400).json(JSend.fail("Không có dữ liệu để cập nhật"));
   }
@@ -131,10 +125,7 @@ async function updateLeague(req, res, next) {
 async function deleteLeague(req, res, next) {
   const { id } = req.params;
 
-  if (req.user.role !== "admin") {
-    return res.status(403).json(JSend.fail("Bạn không có quyền xoá giải đấu"));
-  }
-
+  
   try {
     const league = await leagueService.getLeagueWithDetails(id);
     if (!league) {

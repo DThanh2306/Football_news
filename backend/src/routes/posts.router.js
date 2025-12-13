@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { verifyToken } = require("../middlewares/auth.middleware");
+const { authorize } = require("../middlewares/authorize.middleware");
 const upload = require("../middlewares/upload.middleware");
 const postsController = require("../controllers/posts.controller");
 
@@ -90,6 +91,7 @@ router.get("/favorites", verifyToken, postsController.getFavorites);
 router.post(
   "/",
   verifyToken,
+  authorize("posts", "create"),
   upload.array("images", 10),
   postsController.createPost
 );
@@ -228,7 +230,7 @@ router.get("/:post_id", postsController.getPostById);
  *       500:
  *         description: Lỗi máy chủ
  */
-router.put("/:post_id", verifyToken, postsController.updatePost);
+router.put("/:post_id", verifyToken, authorize("posts", "update"), postsController.updatePost);
 
 /**
  * @swagger
@@ -255,7 +257,7 @@ router.put("/:post_id", verifyToken, postsController.updatePost);
  *       500:
  *         description: Lỗi máy chủ
  */
-router.delete("/:post_id", verifyToken, postsController.deletePost);
+router.delete("/:post_id", verifyToken, authorize("posts", "delete"), postsController.deletePost);
 
 /**
  * @swagger
@@ -297,7 +299,7 @@ router.delete("/:post_id", verifyToken, postsController.deletePost);
  *       500:
  *         description: Lỗi máy chủ
  */
-router.put("/:post_id/review", verifyToken, postsController.reviewPost);
+router.put("/:post_id/review", verifyToken, authorize("posts", "review"), postsController.reviewPost);
 
 router.get("/user/:user_id",  postsController.getPostByUserId);
 

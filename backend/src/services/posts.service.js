@@ -11,8 +11,8 @@ async function createPost(postData, trx) {
     const [post] = await query("posts").insert(postData).returning(["post_id"]);
     return post;
   } catch (error) {
-    console.error("Lỗi khi tạo bài viết:", error);
-    throw new ApiError(500, "Lỗi khi truy vấn cơ sở dữ liệu", error);
+    console.error("Error creating post:", error);
+    throw new ApiError(500, "Database query error", error);
   }
 }
 
@@ -21,8 +21,8 @@ async function addImagesToPost(imageData, trx) {
     const query = trx || knex;
     await query("post_images").insert(imageData);
   } catch (error) {
-    console.error("Lỗi khi thêm ảnh cho bài viết:", error);
-    throw new ApiError(500, "Lỗi khi truy vấn cơ sở dữ liệu", error);
+    console.error("Error adding images to post:", error);
+    throw new ApiError(500, "Database query error", error);
   }
 }
 
@@ -53,7 +53,7 @@ async function getPostById(postId) {
       .first();
     let tags = [];
     if (post.tag_id?.length > 0) {
-      const tags = await knex("tags").whereIn("tag_id", post.tag_id);
+      tags = await knex("tags").whereIn("tag_id", post.tag_id);
       post.tags = tags;
     } else {
       post.tags = [];
@@ -64,18 +64,22 @@ async function getPostById(postId) {
       tags,
     };
   } catch (error) {
-    console.error("Lỗi khi truy vấn chi tiết bài viết:", error);
-    throw new ApiError(500, "Lỗi khi truy vấn cơ sở dữ liệu", error);
+    console.error("Error fetching post detail:", error);
+    throw new ApiError(500, "Database query error", error);
   }
 }
 
 async function getAllPosts({
   filter = {},
   page = 1,
+  limit = 10,
+  offset = undefined,
   fuzzyFields = [],
   q = null,
 }) {
-  const query = knex("posts").select("*");
+  const query = knex({ p: "posts" })
+    .leftJoin({ u: "users" }, "p.user_id", "u.user_id")
+    .select("p.*", "u.username", "u.email", "u.avatar");
 
   if (q && fuzzyFields.length > 0) {
     query.where((builder) => {
@@ -93,12 +97,27 @@ async function getAllPosts({
     query.andWhere(key, filter[key]);
   }
 
-  query
-    .orderBy("post_create_at", "desc");
+  // pagination
+  const effOffset = typeof offset === 'number' ? offset : (Math.max(1, Number(page)) - 1) * Number(limit);
+  query.orderBy("post_create_at", "desc").limit(Number(limit)).offset(effOffset);
+
+  // total count with same filters
+  const countQuery = knex({ p: "posts" });
+  if (q && fuzzyFields.length > 0) {
+    countQuery.where((builder) => {
+      fuzzyFields.forEach((field, idx) => {
+        if (idx === 0) builder.where(field, "ilike", `%${q}%`);
+        else builder.orWhere(field, "ilike", `%${q}%`);
+      });
+    });
+  }
+  for (const key in filter) {
+    countQuery.andWhere(key, filter[key]);
+  }
 
   const [data, totalRes] = await Promise.all([
     query,
-    knex("posts").count("* as count").first(),
+    countQuery.count("* as count").first(),
   ]);
   return {
     items: data,
@@ -109,13 +128,15 @@ async function getAllPosts({
 async function getPublicPosts({
   filter = {},
   page = 1,
+  limit = 10,
+  offset = undefined,
   fuzzyFields = [],
   q = null,
 }) {
-  const query = knex("posts")
-  .select("*")
-  .where("posts.post_status", "published")
-  .orderBy("post_create_at", "desc");
+  const query = knex({ p: "posts" })
+    .leftJoin({ u: "users" }, "p.user_id", "u.user_id")
+    .select("p.*", "u.username", "u.email", "u.avatar")
+    .where("p.post_status", "published");
 
   if (q && fuzzyFields.length > 0) {
     query.where((builder) => {
@@ -133,12 +154,27 @@ async function getPublicPosts({
     query.andWhere(key, filter[key]);
   }
 
-  query
-    .orderBy("post_create_at", "desc");
+  // pagination
+  const effOffset = typeof offset === 'number' ? offset : (Math.max(1, Number(page)) - 1) * Number(limit);
+  query.orderBy("post_create_at", "desc").limit(Number(limit)).offset(effOffset);
+
+  // total count with same filters
+  const countQuery = knex({ p: "posts" }).where("p.post_status", "published");
+  if (q && fuzzyFields.length > 0) {
+    countQuery.where((builder) => {
+      fuzzyFields.forEach((field, idx) => {
+        if (idx === 0) builder.where(field, "ilike", `%${q}%`);
+        else builder.orWhere(field, "ilike", `%${q}%`);
+      });
+    });
+  }
+  for (const key in filter) {
+    countQuery.andWhere(key, filter[key]);
+  }
 
   const [data, totalRes] = await Promise.all([
     query,
-    knex("posts").count("* as count").first(),
+    countQuery.count("* as count").first(),
   ]);
   return {
     items: data,
@@ -151,8 +187,8 @@ async function updatePost(postId, updateData) {
     console.log("📝 Updating post:", postId, updateData);
     return await knex("posts").where({ post_id: postId }).update(updateData);
   } catch (error) {
-    console.error("Lỗi khi cập nhật bài viết:", error);
-    throw new ApiError(500, "Lỗi khi truy vấn cơ sở dữ liệu", error);
+    console.error("Error updating post:", error);
+    throw new ApiError(500, "Database query error", error);
   }
 }
 
@@ -160,8 +196,8 @@ async function deletePost(postId) {
   try {
     return await knex("posts").where({ post_id: postId }).del();
   } catch (error) {
-    console.error("Lỗi khi xoá bài viết:", error);
-    throw new ApiError(500, "Lỗi khi truy vấn cơ sở dữ liệu", error);
+    console.error("Error deleting post:", error);
+    throw new ApiError(500, "Database query error", error);
   }
 }
 
@@ -172,8 +208,8 @@ async function checkFavorite(userId, postId) {
       .first();
     return !!favorite;
   } catch (error) {
-    console.error("Lỗi khi kiểm tra yêu thích:", error);
-    throw new ApiError(500, "Lỗi khi truy vấn cơ sở dữ liệu", error);
+    console.error("Error checking favorite:", error);
+    throw new ApiError(500, "Database query error", error);
   }
 }
 
@@ -185,8 +221,8 @@ async function addFavorite(userId, postId) {
       favorited_at: new Date(),
     });
   } catch (error) {
-    console.error("Lỗi khi thêm yêu thích:", error);
-    throw new ApiError(500, "Lỗi khi truy vấn cơ sở dữ liệu", error);
+    console.error("Error adding favorite:", error);
+    throw new ApiError(500, "Database query error", error);
   }
 }
 
@@ -194,8 +230,8 @@ async function removeFavorite(userId, postId) {
   try {
     await knex("favorites").where({ user_id: userId, post_id: postId }).del();
   } catch (error) {
-    console.error("Lỗi khi bỏ yêu thích:", error);
-    throw new ApiError(500, "Lỗi khi truy vấn cơ sở dữ liệu", error);
+    console.error("Error removing favorite:", error);
+    throw new ApiError(500, "Database query error", error);
   }
 }
 
@@ -207,8 +243,8 @@ async function getFavoritesByUser(userId) {
       .where("favorites.user_id", userId)
       .orderBy("favorites.favorited_at", "desc");
   } catch (error) {
-    console.error("Lỗi khi truy vấn danh sách yêu thích:", error);
-    throw new ApiError(500, "Lỗi khi truy vấn cơ sở dữ liệu", error);
+    console.error("Error fetching favorites list:", error);
+    throw new ApiError(500, "Database query error", error);
   }
 }
 
@@ -224,8 +260,8 @@ async function getPostsByUserId(userId) {
       .where({ user_id: userId })
       .orderBy("post_create_at", "desc");
   } catch (error) {
-    console.error("Lỗi khi truy vấn bài viết của người dùng:", error);
-    throw new ApiError(500, "Lỗi khi truy vấn cơ sở dữ liệu", error);
+    console.error("Error fetching user's posts:", error);
+    throw new ApiError(500, "Database query error", error);
   }
 }
 
@@ -243,5 +279,5 @@ module.exports = {
   getFavoritesByUser,
   checkSlugExists,
   getPostsByUserId,
-  getPublicPosts
+  getPublicPosts,
 };
