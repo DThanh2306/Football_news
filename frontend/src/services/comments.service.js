@@ -31,8 +31,8 @@ export const commentsService = {
     return res.data
   },
 
-  async getAllComments() {
-    const res = await axios.get('/comments')
+  async getAllComments(params = {}) {
+    const res = await axios.get('/comments', { params })
     return res.data
   },
 }

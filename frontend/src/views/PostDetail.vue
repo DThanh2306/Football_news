@@ -11,10 +11,10 @@
         <div class="flex flex-wrap items-center gap-4 mb-6 text-sm text-gray-500">
           <span class="inline-flex items-center gap-1"> 🗓️ {{ today }} </span>
           <button class="inline-flex items-center gap-1 px-2 py-1 rounded border hover:bg-slate-50" @click="copyLink">
-            🔗 Sao chép liên kết
+            🔗 Copy url
           </button>
           <button class="inline-flex items-center gap-1 px-2 py-1 rounded border hover:bg-slate-50" @click="share">
-            📤 Chia sẻ
+            📤 Share
           </button>
         </div>
 
@@ -44,7 +44,7 @@
         ></div>
 
         <div class="mt-10 pt-8 border-t border-slate-200">
-          <h2 class="text-lg font-semibold text-blue-800 mb-4">Bình luận ({{ comments.length }})</h2>
+          <h2 class="text-lg font-semibold text-blue-800 mb-4">Comments ({{ comments.length }})</h2>
 
           <div v-if="currentUser" class="mb-6">
             <div class="flex items-start gap-3 mb-2">
@@ -52,21 +52,21 @@
               <div class="flex-1">
                 <a-textarea
                   v-model:value="newComment"
-                  placeholder="Nhập bình luận của bạn..."
+                  placeholder="Enter your comment..."
                   :rows="3"
                 />
               </div>
             </div>
             <div class="flex justify-end">
               <a-button type="primary" @click="submitComment" :disabled="!newComment.trim()">
-                Gửi bình luận
+                Send
               </a-button>
             </div>
           </div>
 
-          <div v-else class="text-gray-500 italic mb-4">Vui lòng đăng nhập để bình luận.</div>
+          <div v-else class="text-gray-500 italic mb-4">Login to comment.</div>
 
-          <div v-if="comments.length === 0" class="text-gray-500 italic">Chưa có bình luận nào.</div>
+          <div v-if="comments.length === 0" class="text-gray-500 italic">Start a conversation here.</div>
 
           <div v-else class="space-y-6">
             <div
@@ -90,7 +90,7 @@
 
     <aside class="w-full lg:w-80 flex-shrink-0">
       <div class="sticky top-44 bg-white rounded-2xl shadow-xl border border-blue-100 p-4">
-        <h2 class="text-xl font-bold text-blue-700 mb-4">Tin tức liên quan</h2>
+        <h2 class="text-xl font-bold text-blue-700 mb-4">Related News</h2>
         <ul class="space-y-4">
           <li v-for="related in relatedPosts" :key="related.id" class="flex gap-3">
             <img
@@ -118,7 +118,6 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { postsService } from '@/services/posts.service'
-import { postRelationsService } from '@/services/PostRelations.service'
 import { commentsService } from '@/services/comments.service'
 import { useAuthStore } from '@/stores/auth'
 import dayjs from 'dayjs'
@@ -129,6 +128,7 @@ const defaultAvatar = 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png'
 const route = useRoute()
 const slug = route.params.slug
 const post = ref({})
+const authModal = ref(null)
 const comments = ref([])
 const newComment = ref('')
 const relatedPosts = ref([])
@@ -165,40 +165,20 @@ async function submitComment() {
 
 onMounted(async () => {
   try {
-    const res = await postsService.getAllPosts({ post_slug: slug, limit: 1 })
-    const data = res?.data?.items || []
-    if (data.length > 0) {
-      post.value = data[0]
+    const res = await postsService.getPostBySlug(slug)
+    const data = res?.data || res
+    if (data) {
+      post.value = data
       await fetchComments()
-
-      const relationRes = await postRelationsService.getAllByPost(post.value.post_id)
-      const leagues = Array.isArray(relationRes.data?.leagues) ? relationRes.data.leagues : []
-
-      if (leagues.length > 0) {
-        const league_id = leagues[0].league_id
-        const allPosts = await postsService.getAllPosts()
-        relatedPosts.value = []
-
-        const allItems = allPosts?.data?.items || []
-
-        for (const p of allItems) {
-          if (p.post_id === post.value.post_id) continue
-
-          const relRes = await postRelationsService.getAllByPost(p.post_id)
-          const relLeagues = Array.isArray(relRes.data?.leagues) ? relRes.data.leagues : []
-
-          if (relLeagues.some((l) => l.league_id === league_id)) {
-            relatedPosts.value.push({
-              id: p.post_slug,
-              title: p.post_title,
-              excerpt: p.post_content?.slice(0, 100) + '...',
-              thumbnail: p.post_images?.[0]?.replace(/'/g, '') || 'https://via.placeholder.com/150',
-            })
-          }
-        }
-
-        relatedPosts.value = relatedPosts.value.slice(0, 5)
-      }
+      // Lấy related theo league từ API mới
+      const relatedRes = await postsService.getRelatedPosts(post.value.post_id, { by: 'league', limit: 5 })
+      const relItems = Array.isArray(relatedRes?.data) ? relatedRes.data : (Array.isArray(relatedRes) ? relatedRes : [])
+      relatedPosts.value = relItems.map(p => ({
+        id: p.post_slug,
+        title: p.post_title,
+        excerpt: p.post_content?.slice(0, 100) + '...',
+        thumbnail: Array.isArray(p.post_images) ? (p.post_images[0] || 'https://via.placeholder.com/150') : 'https://via.placeholder.com/150',
+      }))
     }
   } catch (err) {
     console.error('Lỗi khi tải bài viết:', err)

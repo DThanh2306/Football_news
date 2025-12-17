@@ -65,20 +65,9 @@ const leagueNameDisplay = computed(() => {
 })
 
 onMounted(async () => {
-  // Lấy tất cả bài viết
-  const res = await postsService.getAllPosts()
-  const allPosts = Array.isArray(res?.data) ? res.data : []
-
-  // Lọc bài viết liên quan đến league này
-  const filtered = []
-  for (const post of allPosts) {
-    // Lấy các league liên quan đến post
-    const leaguesRes = await postRelationsService.getLeaguesByPost(post.post_id)
-    const leagues = Array.isArray(leaguesRes?.data) ? leaguesRes.data : []
-    if (leagues.some(l => l.league_slug === leagueSlug.value || l.league_name?.toLowerCase().replace(/\s/g, '-') === leagueSlug.value)) {
-      filtered.push(post)
-    }
-  }
-  leaguePosts.value = filtered
+  // Lấy bài viết theo league_slug qua API public (tránh N+1)
+  const payload = await postsService.getPublicPosts({ league_slug: leagueSlug.value, limit: 20 })
+  const items = Array.isArray(payload) ? payload : (Array.isArray(payload?.items) ? payload.items : [])
+  leaguePosts.value = items
 })
 </script>

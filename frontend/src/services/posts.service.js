@@ -22,18 +22,27 @@ export const postsService = {
 
   async getPublicPosts(filters = {}) {
     const res = await axios.get(`${BASE_URL}/public`, { params: filters })
-    console.log('✅ Response from /public:', res.data)
-    return res.data
+    return res.data?.data ?? res.data
   },
 
   async getAllPosts(filters = {}) {
     const res = await axios.get(BASE_URL, { params: filters })
-    console.log('✅ Response from /posts:', res.data)
-    return res.data
+    const payload = res.data?.data ?? res.data
+    return payload
   },
 
   async getPostById(post_id) {
     const res = await axios.get(`${BASE_URL}/${post_id}`)
+    return res.data
+  },
+
+  async getPostBySlug(slug) {
+    const res = await axios.get(`${BASE_URL}/slug/${encodeURIComponent(slug)}`)
+    return res.data
+  },
+
+  async getRelatedPosts(post_id, { by = 'league', limit = 5 } = {}) {
+    const res = await axios.get(`${BASE_URL}/${post_id}/related`, { params: { by, limit } })
     return res.data
   },
 

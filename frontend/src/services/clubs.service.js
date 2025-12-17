@@ -4,10 +4,8 @@ const BASE_URL = "/clubs";
 
 export const clubsService = {
 
-  async getAllClubs(league_id = null) {
-    const res = await axios.get(BASE_URL, {
-      params: league_id ? { league_id } : {},
-    });
+  async getAllClubs(params = {}) {
+    const res = await axios.get(BASE_URL, { params });
     return res.data;
   },
 

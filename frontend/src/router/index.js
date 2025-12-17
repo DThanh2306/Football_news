@@ -16,7 +16,7 @@ const AdminClubs = () => import('@/views/admin/AdminClubs.vue')
 const AdminUsers = () => import('@/views/admin/AdminUsers.vue')
 const AdminComments = () => import('@/views/admin/AdminComments.vue')
 const AdminPlayers = () => import('@/views/admin/AdminPlayers.vue')
-// const AdminMatches = () => import('@/views/admin/AdminMatches.vue')
+const AdminMatches = () => import('@/views/admin/AdminMatches.vue')
 // const AdminSettings = () => import('@/views/admin/AdminSettings.vue')
 
 const routes = [
@@ -24,8 +24,10 @@ const routes = [
   { path: '/login', name: 'login', component: LoginForm },
   { path: '/post/:slug', name: 'postDetail', component: PostDetail },
   { path: '/schedule', name: 'schedule', component: SchedulePage },
+  { path: '/standings', name: 'standings', component: () => import('@/views/StandingsPage.vue') },
   { path: '/profile', name: 'profile', component: ProfilePage },
   { path: '/posts', name: 'posts', component: SearchResult },
+  { path: '/tags', name: 'tags', component: SearchResult },
   { path: '/league/:slug', name: 'homeLeague', component: HomePage, props: true },
 
   {
@@ -45,7 +47,7 @@ const routes = [
         props: true,
       },
       { path: 'players', name: 'adminPlayers', component: AdminPlayers },
-      // { path: 'matches', name: 'adminMatches', component: AdminMatches },
+      { path: 'matches', name: 'adminMatches', component: AdminMatches },
       // { path: 'settings', name: 'adminSettings', component: AdminSettings }
     ],
   },
@@ -57,10 +59,7 @@ const router = createRouter({
 })
 
 router.beforeEach((to, from, next) => {
-  const auth = useAuthStore()
-  // Trang admin cho phép vào, nhưng quyền sửa sẽ kiểm tra ở UI theo role
-  // Nếu muốn chặn hẳn ai không có token khỏi admin, bật đoạn dưới:
-  // if (to.path.startsWith('/admin') && !auth.token) return next({ name: 'login' })
+  // Cho phép vào /admin, hiển thị modal đăng nhập trong AdminLayout nếu chưa có token
   next()
 })
 

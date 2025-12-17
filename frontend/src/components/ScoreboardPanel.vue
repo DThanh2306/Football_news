@@ -2,7 +2,7 @@
   <aside class="sticky top-44 w-full lg:w-80 flex-shrink-0">
     <div class="bg-white rounded-lg shadow overflow-hidden mb-6">
       <div class="px-4 py-3 border-b bg-slate-100 text-center font-bold text-slate-700">
-        LỊCH THI ĐẤU - KẾT QUẢ
+        Schedule
       </div>
 
       <div v-if="loading" class="p-4 space-y-3">
@@ -40,52 +40,18 @@
       </div>
     </div>
 
-    <!-- BẢNG XẾP HẠNG (dữ liệu cứng) -->
-    <div class="bg-gray-50 rounded-lg shadow p-4">
-      <h2 class="text-lg font-bold mb-2">BẢNG XẾP HẠNG</h2>
-      <a-select v-model:value="selectedLeague" class="w-full mb-2" :options="leagueOptions" />
-      <table class="w-full text-sm border-t">
-        <thead>
-          <tr>
-            <th class="py-1 text-left">TT</th>
-            <th class="py-1 text-left">Đội</th>
-            <th class="py-1">Trận</th>
-            <th class="py-1">HS</th>
-            <th class="py-1">Điểm</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr
-            v-for="(team, idx) in (ranking[selectedLeague] || [])"
-            :key="team.name"
-            :class="idx % 2 ? 'bg-white' : 'bg-gray-50'"
-          >
-            <td>{{ idx + 1 }}</td>
-            <td class="flex items-center gap-2">
-              <img :src="team.logo" alt="logo" class="w-6 h-6 object-contain" />
-              {{ team.name }}
-            </td>
-            <td class="text-center">{{ team.played }}</td>
-            <td class="text-center">{{ team.hs }}</td>
-            <td class="text-center">{{ team.points }}</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
   </aside>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import axios from '@/utils/axios'
+import { matchesService } from '@/services/matches.service'
 
 // state
 const loading = ref(false)
 const error = ref(null)
 const scheduleGroups = ref([])
 
-const selectedLeague = ref('')       // dùng league_name
-const leagueOptions = ref([])
 
 // helpers cần thiết
 function pillClass(status) {
@@ -95,35 +61,6 @@ function pillClass(status) {
 }
 function safeScore(v) { return typeof v === 'number' ? v : '-' }
 
-// BXH cứng, key = league_name
-const ranking = {
-  'Premier League': [
-    { name: 'Manchester United', logo: '/public/Manchester_United.svg', played: 8, hs: 18, points: 22 },
-    { name: 'Arsenal', logo: '/public/Arsenal.svg', played: 8, hs: 15, points: 20 },
-    { name: 'Chelsea', logo: '/public/Chelsea.svg', played: 8, hs: 12, points: 17 },
-    { name: 'Brighton', logo: '/public/Brighton_&_Hove_Albion.svg', played: 8, hs: 9, points: 15 },
-    { name: 'Aston Villa', logo: '/public/Aston_Villa.webp', played: 8, hs: 6, points: 13 },
-    { name: 'Crystal Palace', logo: '/public/Crystal_Palace.svg', played: 8, hs: 4, points: 12 },
-    { name: 'Brentford', logo: '/public/Brentford.webp', played: 8, hs: 2, points: 11 },
-    { name: 'Fulham', logo: '/public/Fulham.svg', played: 8, hs: -1, points: 9 },
-    { name: 'Bournemouth', logo: '/public/Bournemouth.svg', played: 8, hs: -5, points: 7 },
-    { name: 'Burnley', logo: '/public/burnley.png', played: 8, hs: -10, points: 4 },
-  ],
-  'La Liga': [
-    { name: 'Real Madrid', logo: '/upload/realmadrid.png', played: 0, hs: 0, points: 0 },
-    { name: 'Barcelona', logo: '/upload/barcelona.png', played: 0, hs: 0, points: 0 },
-    { name: 'Atletico Madrid', logo: '/upload/atleticomadrid.png', played: 0, hs: 0, points: 0 },
-    { name: 'Sevilla', logo: '/upload/sevilla.png', played: 0, hs: 0, points: 0 },
-    { name: 'Valencia', logo: '/upload/valencia.png', played: 0, hs: 0, points: 0 },
-  ],
-  'Serie A': [
-    { name: 'Juventus', logo: '/upload/juventus.png', played: 0, hs: 0, points: 0 },
-    { name: 'AC Milan', logo: '/upload/acmilan.png', played: 0, hs: 0, points: 0 },
-    { name: 'Inter Milan', logo: '/upload/intermilan.png', played: 0, hs: 0, points: 0 },
-    { name: 'Napoli', logo: '/upload/napoli.png', played: 0, hs: 0, points: 0 },
-    { name: 'Roma', logo: '/upload/roma.png', played: 0, hs: 0, points: 0 },
-  ],
-}
 
 onMounted(loadAll)
 
@@ -131,24 +68,35 @@ async function loadAll() {
   loading.value = true
   error.value = null
   try {
+    const route = (await import('vue-router')).useRoute?.() || null
+    const activeSlug = route?.params?.slug
+    const leaguesApi = (await import('@/utils/axios')).default.get('/leagues')
+    // nếu có slug giải trên route, lọc theo giải đó, default: không lọc
+    let leagueId = null
+    try {
+      const lr = await leaguesApi
+      const ls = lr?.data?.data || []
+      if (activeSlug) {
+        const found = ls.find(l => l.league_slug === activeSlug)
+        leagueId = found?.league_id || null
+      }
+    } catch (e) {
+      console.warn('Không lấy được danh sách leagues', e)
+    }
+
     const [leaguesRes, matchesRes, clubsRes] = await Promise.all([
-      axios.get('/leagues'),
-      axios.get('/matches'),
-      axios.get('/clubs'),
+      // Giữ nguyên axios cho 2 API còn lại để tránh thay đổi lớn
+      (await import('@/utils/axios')).default.get('/leagues'),
+      matchesService.getAllMatches({ pageSize: 20, sort: 'match_date', order: 'desc', league_id: leagueId || undefined }),
+      (await import('@/utils/axios')).default.get('/clubs'),
     ])
 
     const leagues = leaguesRes?.data?.data || []
-    const matches = matchesRes?.data?.data || []
+    const matches = Array.isArray(matchesRes?.items) ? matchesRes.items : (Array.isArray(matchesRes) ? matchesRes : [])
     const clubs   = clubsRes?.data?.data   || []
 
     const leagueById = new Map(leagues.map(l => [l.league_id, l]))
     const clubById   = new Map(clubs.map(c => [c.club_id, c]))
-
-    // options & default selected (league_name)
-    leagueOptions.value = leagues.map(l => ({ label: l.league_name, value: l.league_name }))
-    if (!selectedLeague.value && leagueOptions.value.length) {
-      selectedLeague.value = leagueOptions.value[0].value
-    }
 
     // group by league_id
     const groups = new Map()
@@ -166,10 +114,13 @@ async function loadAll() {
       const mapped = list.map(row => {
         const home = clubById.get(row.home_fc_id)
         const away = clubById.get(row.away_fc_id)
+        const dt = row.match_date ? new Date(row.match_date) : null
+        const hh = dt ? String(dt.getHours()).padStart(2,'0') : '--'
+        const mm = dt ? String(dt.getMinutes()).padStart(2,'0') : '--'
         return {
           id: row.match_id,
           status: row.status || 'scheduled',
-          time: '--:--',
+          time: `${hh}:${mm}`,
           home: {
             id: row.home_fc_id,
             name: home?.club_name || `Club ${row.home_fc_id}`,

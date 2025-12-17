@@ -1,15 +1,18 @@
 <template>
-  <div class="min-h-screen bg-gray-100 py-4 px-4">
-    <div class="max-w-7xl mx-auto flex flex-col lg:flex-row gap-8 bg-white rounded-lg">
-      <div class="flex-1 flex flex-col gap-8">
-        <section>
+  <div class="h-[100vh] bg-gray-100 py-4 px-4 overflow-hidden">
+    <div class="max-w-7xl mx-auto flex flex-col lg:flex-row gap-8 bg-white rounded-lg h-full">
+      <div class="flex-1 flex flex-col gap-4 overflow-hidden">
+        <section class="flex-1 min-h-0 flex flex-col">
           <div class="flex items-center justify-between pt-4 pl-4 pr-4">
             <h2 class="text-2xl font-bold text-blue-700">
               {{ pageTitle }}
             </h2>
           </div>
 
-          <div v-if="loading" class="grid grid-cols-1 md:grid-cols-2 gap-6 p-4">
+          <div
+            v-if="loading"
+            class="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 h-[calc(100vh-260px)] overflow-y-auto"
+          >
             <div
               v-for="i in 6"
               :key="i"
@@ -19,37 +22,24 @@
 
           <div v-else-if="error" class="p-4 text-red-600">{{ error }}</div>
 
-          <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-6 p-4">
-            <div
-              v-for="post in newPosts"
-              :key="post.post_id"
-              class="bg-white rounded-lg shadow p-4 flex flex-col md:flex-row gap-4"
-            >
-              <img
-                :src="post.post_images?.[0] || defaultImg"
-                :alt="post.post_title"
-                class="w-full md:w-40 h-32 object-cover rounded"
-              />
-              <div>
-                <router-link
-                  :to="`/post/${post.post_slug}`"
-                >
-                  <h3 class="font-semibold text-lg mb-2">{{ post.post_title }}</h3>
-                </router-link>
-
-                <p class="text-gray-600 text-sm line-clamp-3">{{ getPlainText(post.post_content).slice(0, 200) }}</p>
-                <router-link
-                  :to="`/post/${post.post_slug}`"
-                  class="text-blue-600 hover:underline text-sm mt-2 inline-block"
-                  >Xem chi tiết</router-link
-                >
+          <div v-else class="flex-1 min-h-0 overflow-y-auto p-4">
+            <div class="space-y-4">
+              <div v-if="featuredPost" class="mb-2">
+                <FeaturedPost :post="featuredPost" :default-img="defaultImg" />
               </div>
+              <CardPostRow v-for="post in newPosts" :key="post.post_id" :post="post" :default-img="defaultImg" />
             </div>
           </div>
         </section>
       </div>
 
-      <ScoreboardPanel :league="activeSlug" />
+      <div class="w-full lg:w-80 flex-shrink-0">
+        <div class=" ">
+
+          <RankingPanel :league-slug="activeSlug || ''" />
+        </div>
+          <ScoreboardPanel :league="activeSlug" />
+      </div>
     </div>
   </div>
 </template>
@@ -58,8 +48,10 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import ScoreboardPanel from '@/components/ScoreboardPanel.vue'
+import RankingPanel from '@/components/RankingPanel.vue'
 import { postsService } from '@/services/posts.service'
-import { postRelationsService } from '@/services/PostRelations.service'
+import FeaturedPost from '@/components/FeaturedPost.vue'
+import CardPostRow from '@/components/CardPostRow.vue'
 
 const defaultImg = 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png'
 
@@ -69,17 +61,17 @@ const activeSlug = computed(() => route.params.slug)
 const loading = ref(false)
 const error = ref('')
 const newPosts = ref([])
+const featuredPost = ref(null)
 const page = ref(1)
 const limit = 8
 const total = ref(0)
 const loadingMore = ref(false)
 
-
 const leagueLabels = {
   'la-liga': 'La Liga',
   'premier-league': 'Premier League',
   'serie-a': 'Serie A',
-  bundesliga: 'Bundesliga',
+  'bundesliga': 'Bundesliga',
   'ligue-1': 'Ligue 1',
   'champions-league': 'Champions League',
   'europa-league': 'Europa League',
@@ -87,18 +79,9 @@ const leagueLabels = {
 
 const pageTitle = computed(() =>
   activeSlug.value
-    ? `Tin tức – ${leagueLabels[activeSlug.value] || activeSlug.value}`
-    : 'Tin tức mới nhất',
+    ? `Latest News – ${leagueLabels[activeSlug.value] || activeSlug.value}`
+    : 'Latest News',
 )
-
-function slugify(s) {
-  return (s || '')
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '')
-}
 
 async function loadDefault() {
   if (page.value === 1) loading.value = true
@@ -106,17 +89,24 @@ async function loadDefault() {
 
   error.value = ''
   try {
-    const res = await postsService.getPublicPosts({ page: page.value, limit })
-    const data = res?.data || {}
-    const items = Array.isArray(data.items) ? data.items : []
+    const payload = await postsService.getPublicPosts({ page: page.value, limit })
+    const items = Array.isArray(payload?.items)
+      ? payload.items
+      : Array.isArray(payload)
+        ? payload
+        : []
 
-    if (page.value === 1) newPosts.value = items
-    else newPosts.value.push(...items)
+    if (page.value === 1) {
+      featuredPost.value = items[0] || null
+      newPosts.value = items.slice(1)
+    } else {
+      newPosts.value.push(...items)
+    }
 
-    total.value = Number(data.total || items.length)
+    total.value = Number((payload && payload.total) || items.length)
     page.value++
   } catch {
-    error.value = 'Không tải được bài viết.'
+    error.value = 'Cannot load posts.'
     if (page.value === 1) newPosts.value = []
   } finally {
     loading.value = false
@@ -135,21 +125,16 @@ async function loadByLeague(slug) {
       return
     }
 
-    const res = await postsService.getPublicPosts()
-    const all = Array.isArray(res?.data.items) ? res.data.items : []
-
-    const result = []
-    for (const p of all) {
-      if (result.length >= 6) break
-      const leaguesRes = await postRelationsService.getLeaguesByPost(p.post_id)
-      const leagues = Array.isArray(leaguesRes?.data) ? leaguesRes.data : []
-      const match = leagues.some((l) => l.league_slug === slug || slugify(l.league_name) === slug)
-      if (match) result.push(p)
-    }
-
-    newPosts.value = result
+    // fallback: dùng API filter theo league_slug (tránh N+1)
+    const payload = await postsService.getPublicPosts({ league_slug: slug, limit: 6 })
+    const items = Array.isArray(payload?.items)
+      ? payload.items
+      : Array.isArray(payload)
+        ? payload
+        : []
+    newPosts.value = items
   } catch {
-    error.value = 'Không tải được bài viết theo giải.'
+    error.value = 'Cannot load posts by league.'
     newPosts.value = []
   } finally {
     loading.value = false
@@ -182,10 +167,14 @@ async function load() {
     loading.value = true
     error.value = ''
     try {
-      const res = await postsService.getPublicPosts({ q: keyword })
-      newPosts.value = Array.isArray(res?.data?.items) ? res.data.items : res.data || []
+      const payload = await postsService.getPublicPosts({ q: keyword })
+      newPosts.value = Array.isArray(payload?.items)
+        ? payload.items
+        : Array.isArray(payload)
+          ? payload
+          : []
     } catch {
-      error.value = 'Không tìm thấy kết quả phù hợp.'
+      error.value = 'No matching results found.'
       newPosts.value = []
     } finally {
       loading.value = false
@@ -205,20 +194,18 @@ onMounted(() => {
   window.addEventListener('scroll', onScroll)
 })
 
-watch(() => route.fullPath, () => {
-  page.value = 1
-  newPosts.value = []
-  total.value = 0
-  load()
-})
+watch(
+  () => route.fullPath,
+  () => {
+    page.value = 1
+    newPosts.value = []
+    total.value = 0
+    load()
+  },
+)
 
 onUnmounted(() => {
   window.removeEventListener('scroll', onScroll)
-});
-
-  function getPlainText(html) {
-      if (!html) return "";
-      return html.replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim();
-    }
+})
 
 </script>

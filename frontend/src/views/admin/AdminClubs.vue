@@ -1,23 +1,23 @@
 <template>
-  <div class="p-6">
+  <div class="p-6 overflow-x-hidden">
     <a-breadcrumb class="mb-6">
       <a-breadcrumb-item>Admin</a-breadcrumb-item>
       <a-breadcrumb-item>Clubs</a-breadcrumb-item>
     </a-breadcrumb>
 
     <div class="flex justify-between items-center mb-4">
-      <h1 class="text-2xl font-bold text-blue-700">Manage Clubs</h1>
+      <h1 class="text-3xl font-bold text-blue-800 tracking-tight">Manage Clubs</h1>
 
-      <div class="flex items-center gap-3">
-        <!-- Tìm kiếm -->
-        <a-input
+      <div class="flex items-center gap-2">
+        <a-input-search
           v-model:value="search"
           placeholder="Search clubs..."
           allow-clear
-          class="w-56"
-          @input="filterData"
+          enter-button
+          style="width: 260px"
+          @search="filterData"
         />
-
+        <a-button @click="refresh" :loading="loading">Refresh</a-button>
         <a-button
           type="primary"
           class="bg-blue-600 border-blue-600"
@@ -28,15 +28,19 @@
       </div>
     </div>
 
-    <a-table
-      :columns="columns"
-      :data-source="filteredData"
-      :loading="loading"
-      :pagination="{ pageSize: 6 }"
-      row-key="club_id"
-      bordered
-      class="rounded-xl shadow-sm"
+    <div
+      class="border rounded-lg shadow-sm bg-white overflow-y-auto overflow-x-hidden"
+      style="max-height: calc(100vh - 170px)"
     >
+      <a-table
+        :columns="columns"
+        :data-source="filteredData"
+        :loading="loading"
+        :pagination="{ pageSize: 10, showTotal: (t) => `Total ${t}` }"
+        row-key="club_id"
+        bordered
+        class="rounded-none"
+      >
       <template #bodyCell="{ column, record }">
         <!-- Logo -->
         <template v-if="column.key === 'img'">
@@ -85,7 +89,8 @@
           </div>
         </template>
       </template>
-    </a-table>
+      </a-table>
+    </div>
 
     <!-- Modal -->
     <a-modal
@@ -102,8 +107,15 @@
           <a-input v-model:value="form.club_name" />
         </a-form-item>
 
-        <a-form-item label="League" name="league" :rules="[{ required: true, message: 'Please enter league' }]">
-          <a-input v-model:value="form.league" />
+        <a-form-item label="League" name="league_id" :rules="[{ required: true, message: 'Please select league' }]">
+          <a-select
+            v-model:value="selectedLeagueId"
+            :options="leagueOptions"
+            placeholder="Select league"
+            show-search
+            option-filter-prop="label"
+            style="width: 100%"
+          />
         </a-form-item>
 
         <a-form-item label="Country" name="country" :rules="[{ required: true, message: 'Please enter country' }]">
@@ -131,6 +143,7 @@
 import { ref, onMounted } from 'vue'
 import { message } from 'ant-design-vue'
 import { clubsService } from '@/services/clubs.service'
+import { leaguesService } from '@/services/leagues.service'
 import { useRouter } from 'vue-router'
 
 const search = ref("")
@@ -149,8 +162,8 @@ const filterData = () => {
 const columns = [
   { title: 'Logo', dataIndex: 'club_img', key: 'img', width: 90, align: 'center' },
   { title: 'Tên đội', dataIndex: 'club_name', key: 'name' },
-  { title: 'Giải đấu', dataIndex: 'league_name', key: 'league', width: 140 },
-  { title: 'Quốc gia', dataIndex: 'country', key: 'country', width: 120 },
+  { title: 'Giải đấu', dataIndex: 'league_name', key: 'league', width: 180 },
+  { title: 'Quốc gia', dataIndex: 'country', key: 'country', width: 140 },
   { title: 'Cầu thủ', key: 'player_actions', align: 'center', width: 100 },
   { title: 'Thao tác', key: 'actions', align: 'center', width: 120 }
 ]
@@ -164,10 +177,12 @@ const formRef = ref()
 
 const form = ref({
   club_name: '',
-  league: '',
   country: '',
   club_img: ''
 })
+
+const selectedLeagueId = ref(null)
+const leagueOptions = ref([])
 
 const fetchClubs = async () => {
   loading.value = true
@@ -182,10 +197,21 @@ const fetchClubs = async () => {
   }
 }
 
+const fetchLeagues = async () => {
+  try {
+    const res = await leaguesService.getAllLeagues()
+    const list = res?.data || res || []
+    leagueOptions.value = list.map(l => ({ label: l.league_name, value: l.league_id }))
+  } catch {
+    leagueOptions.value = []
+  }
+}
+
 const openCreate = () => {
   isEdit.value = false
   editingId.value = null
-  form.value = { club_name: '', league: '', country: '', club_img: '' }
+  form.value = { club_name: '', country: '', club_img: '' }
+  selectedLeagueId.value = null
   modalOpen.value = true
 }
 
@@ -194,10 +220,10 @@ const openEdit = (record) => {
   editingId.value = record.club_id
   form.value = {
     club_name: record.club_name,
-    league: record.league,
     country: record.country,
     club_img: record.club_img
   }
+  selectedLeagueId.value = record.league_id || null
   modalOpen.value = true
 }
 const goPlayers = (id) => {
@@ -221,11 +247,18 @@ const onFileChange = async (e) => {
 const handleSubmit = async () => {
   submitting.value = true
   try {
+    const payload = {
+      club_name: form.value.club_name,
+      club_img: form.value.club_img,
+      league_ids: selectedLeagueId.value ? [selectedLeagueId.value] : []
+    }
+    if (form.value.country) payload.country = form.value.country
+
     if (isEdit.value) {
-      await clubsService.updateClub(editingId.value, form.value)
+      await clubsService.updateClub(editingId.value, payload)
       message.success('Cập nhật thành công!')
     } else {
-      await clubsService.createClub(form.value)
+      await clubsService.createClub(payload)
       message.success('Added successfully!')
     }
     modalOpen.value = false
@@ -254,8 +287,17 @@ const resetForm = () => {
   modalOpen.value = false
   isEdit.value = false
   editingId.value = null
-  form.value = { club_name: '', league: '', country: '', club_img: '' }
+  form.value = { club_name: '', country: '', club_img: '' }
+  selectedLeagueId.value = null
 }
 
-onMounted(fetchClubs)
+onMounted(async () => {
+  await fetchClubs()
+  await fetchLeagues()
+})
+
+const refresh = async () => {
+  await fetchClubs()
+  await fetchLeagues()
+}
 </script>

@@ -1,25 +1,40 @@
 <template>
-  <div class="p-6">
+  <div class="p-6 overflow-x-hidden">
     <a-breadcrumb class="mb-6">
       <a-breadcrumb-item>Admin</a-breadcrumb-item>
       <a-breadcrumb-item>Leagues</a-breadcrumb-item>
     </a-breadcrumb>
 
     <div class="flex justify-between items-center mb-4">
-      <h1 class="text-2xl font-bold text-blue-700">Manage Leagues</h1>
-      <a-button type="primary" class="bg-blue-600 border-blue-600" @click="openCreate">
-        Add league
-      </a-button>
+      <h1 class="text-3xl font-bold text-blue-800 tracking-tight">Manage Leagues</h1>
+      <div class="flex items-center gap-2">
+        <a-input-search
+          v-model:value="searchKeyword"
+          placeholder="Search league..."
+          allow-clear
+          enter-button
+          style="width: 260px"
+          @search="applySearch"
+        />
+        <a-button @click="refresh" :loading="loading">Refresh</a-button>
+        <a-button type="primary" class="bg-blue-600 border-blue-600" @click="openCreate">
+          Add league
+        </a-button>
+      </div>
     </div>
 
-    <a-table
-      :columns="columns"
-      :data-source="data"
-      :loading="loading"
-      :pagination="{ pageSize: 10, showTotal: (t) => `Total ${t}` }"
-      :row-key="rowKeyFn"
-      bordered
+    <div
+      class="border rounded-lg shadow-sm bg-white overflow-y-auto overflow-x-hidden"
+      style="max-height: calc(100vh - 170px)"
     >
+      <a-table
+        :columns="columns"
+        :data-source="filteredData"
+        :loading="loading"
+        :pagination="{ pageSize: 10, showTotal: (t) => `Total ${t}` }"
+        :row-key="rowKeyFn"
+        bordered
+      >
       <template #bodyCell="{ column, record }">
         <!-- Logo -->
         <template v-if="column.dataIndex === 'league_img'">
@@ -55,7 +70,8 @@
           </a-popconfirm>
         </template>
       </template>
-    </a-table>
+      </a-table>
+    </div>
 
     <!-- Modal create / edit -->
     <a-modal
@@ -119,7 +135,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { message } from 'ant-design-vue'
 import { leaguesService } from '@/services/leagues.service'
 import { leagueManagersService } from '@/services/leagueManagers.service'
@@ -136,6 +152,12 @@ const columns = [
 // ====== State ======
 const data = ref([])
 const loading = ref(false)
+const searchKeyword = ref('')
+const filteredData = computed(() => {
+  const kw = searchKeyword.value.trim().toLowerCase()
+  if (!kw) return data.value
+  return data.value.filter(r => r.league_name?.toLowerCase().includes(kw))
+})
 
 // League Manager data
 const lmList = ref([])
@@ -231,6 +253,14 @@ const fetchLeagues = async () => {
   } finally {
     loading.value = false
   }
+}
+
+const applySearch = () => {
+  // lọc client-side nên không cần gọi API, nhưng có thể reset phân trang ở đây nếu cần
+}
+
+const refresh = () => {
+  fetchLeagues()
 }
 
 const openCreate = () => {

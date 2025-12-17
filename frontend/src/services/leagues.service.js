@@ -12,8 +12,8 @@ export const leaguesService = {
     return res.data;
   },
 
-  async getAllLeagues() {
-    const res = await axios.get(BASE_URL);
+  async getAllLeagues(params = {}) {
+    const res = await axios.get(BASE_URL, { params });
     return res.data;
   },
 

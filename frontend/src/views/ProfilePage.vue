@@ -244,6 +244,8 @@ async function loadMyComments() {
 
 
 function onPostPageChange(p) {
+  if (!auth.token) return
+
   postQuery.page = p
   loadMyPosts()
 }

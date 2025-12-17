@@ -15,7 +15,7 @@
           to="/"
           class="border border-blue-300 px-3 py-1 rounded-full hover:bg-blue-100 transition text-sm text-blue-700 font-semibold"
         >
-          🌐 Mới nhất
+          🌐 Latest News
         </router-link>
       </div>
 
@@ -25,7 +25,7 @@
             v-model="searchText"
             @keydown.enter="handleSearch"
             type="text"
-            placeholder="Tìm kiếm..."
+            placeholder="CR7, MU, Serie A..."
             class="pl-4 pr-10 py-1.5 border border-blue-200 rounded-full text-sm outline-none focus:ring-2 focus:ring-blue-400 transition bg-white"
           />
           <button
@@ -43,11 +43,15 @@
                 <a-menu>
                   <a-menu-item key="profile" @click="goToProfile">
                     <UserOutlined />
-                    Hồ sơ
+                    profile
+                  </a-menu-item>
+                  <a-menu-item v-if="user?.role && user.role !== 'user'" key="admin" @click="goToAdmin">
+                    🛠️
+                    Admin Panel
                   </a-menu-item>
                   <a-menu-item key="logout" @click="handleLogout">
                     <LogoutOutlined />
-                    Đăng xuất
+                    Logout
                   </a-menu-item>
                 </a-menu>
               </template>
@@ -66,7 +70,7 @@
                 type="primary"
                 class="bg-blue-600 border-blue-600 hover:bg-blue-700 hover:border-blue-700"
                 @click="openLogin"
-                >Đăng nhập</a-button
+                >Login</a-button
               >
             </router-link>
           </template>
@@ -77,25 +81,22 @@
     <nav
       class="flex items-center justify-between gap-6 px-6 py-3 text-sm max-w-7xl mx-auto font-semibold text-gray-700 overflow-x-auto whitespace-nowrap border-t border-blue-200 bg-blue-50 bg-gradient-to-r from-blue-50 to-blue-100 shadow-sm sticky top-0 z-50"
     >
-      <router-link to="/" :class="navClass('/')">Trang chủ</router-link>
-      <router-link to="/posts" :class="navClass('/posts')">Tin mới nhất</router-link>
-      <router-link to="/tags" :class="navClass('/tags')">Chuyển nhượng</router-link>
-      <!-- <router-link to="/schedule" :class="navClass('/schedule')">Lịch thi đấu</router-link> -->
-      <router-link to="/league/champions-league" :class="navClass('/league/champions-league')"
-        >Champions League</router-link
-      >
-      <router-link to="/league/europa-league" :class="navClass('/league/europa-league')"
-        >Europa League</router-link
-      >
-      <router-link to="/league/premier-league" :class="navClass('/league/premier-league')"
-        >Premier League</router-link
-      >
-      <router-link to="/league/la-liga" :class="navClass('/league/la-liga')">La Liga</router-link>
-      <router-link to="/league/serie-a" :class="navClass('/league/serie-a')">Serie A</router-link>
-      <router-link to="/league/bundesliga" :class="navClass('/league/bundesliga')"
-        >Bundesliga</router-link
-      >
-      <router-link to="/league/ligue-1" :class="navClass('/league/ligue-1')">Ligue 1</router-link>
+      <router-link to="/" :class="navClass('/')">Home</router-link>
+      <router-link to="/posts" :class="navClass('/posts')">Latest News</router-link>
+      <router-link to="/schedule" :class="navClass('/schedule')">Schedule</router-link>
+      <router-link to="/standings" :class="navClass('/standings')">Scoreboard</router-link>
+      <a-dropdown trigger="hover">
+        <a class="ant-dropdown-link" @click.prevent>
+          League ▾
+        </a>
+        <template #overlay>
+          <a-menu>
+            <a-menu-item v-for="l in leagues" :key="l.league_id">
+              <router-link :to="`/league/${l.league_slug}`">{{ l.league_name }}</router-link>
+            </a-menu-item>
+          </a-menu>
+        </template>
+      </a-dropdown>
     </nav>
     <loginForm ref="authModal" />
   </header>
@@ -109,6 +110,8 @@ import dayjs from 'dayjs'
 import 'dayjs/locale/vi'
 import { UserOutlined, LogoutOutlined, DownOutlined } from '@ant-design/icons-vue'
 import loginForm from '@/components/LoginForm.vue'
+import { leaguesService } from '@/services/leagues.service'
+import { tagsService } from '@/services/tags.service'
 
 dayjs.locale('vi')
 const today = dayjs().format('dddd, hh:mm, DD/MM/YYYY')
@@ -118,6 +121,8 @@ const router = useRouter()
 const auth = useAuthStore()
 const authModal = ref(null)
 const searchText = ref('')
+const leagues = ref([])
+const tags = ref([])
 
 const openLogin = () => {
   authModal.value.open()
@@ -133,6 +138,7 @@ const navClass = (path) => {
 }
 
 const goToProfile = () => router.push('/profile')
+const goToAdmin = () => router.push('/admin')
 
 function handleSearch() {
   if (!searchText.value.trim()) return
@@ -142,4 +148,15 @@ function handleSearch() {
 const handleLogout = () => {
   auth.logout()
 }
+
+// load leagues for header nav dynamically
+;(async () => {
+  try {
+    const res = await leaguesService.getAllLeagues()
+    leagues.value = Array.isArray(res?.data) ? res.data : res
+  } catch (e) {
+    leagues.value = []
+    console.error('Cannot load League', e)
+  }
+})()
 </script>

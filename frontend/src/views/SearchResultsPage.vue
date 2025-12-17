@@ -70,11 +70,12 @@ async function loadSearchResults() {
   loading.value = true
   error.value = ''
   try {
-    const res = await postsService.getAllPosts({ q: keyword.value })
-    const raw = res?.data || {}
-    newPosts.value = Array.isArray(raw.items) ? raw.items : []
-  } catch {
-    error.value = 'Không tìm thấy kết quả phù hợp.'
+    const payload = await postsService.getAllPosts({ q: keyword.value })
+    // payload có thể là { items, pagination } hoặc mảng
+    if (Array.isArray(payload)) newPosts.value = payload
+    else newPosts.value = Array.isArray(payload?.items) ? payload.items : []
+  } catch (e) {
+    error.value = e?.message || 'Không tìm thấy kết quả phù hợp.'
     newPosts.value = []
   } finally {
     loading.value = false
