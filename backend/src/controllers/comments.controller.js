@@ -116,8 +116,31 @@ async function updateComment(req, res, next) {
 
 async function getAllComments(req, res, next) {
   try {
-    const comments = await commentService.getAllCommentsWithInfo();
-    return res.status(200).json(JSend.success(comments));
+    const {
+      page = 1,
+      pageSize = 10,
+      q = '',
+      post_id = null,
+      user_id = null,
+      from = null,
+      to = null,
+      sort = 'cmt_create_at',
+      order = 'desc',
+    } = req.query;
+
+    const result = await commentService.searchComments({
+      page: Number(page),
+      pageSize: Number(pageSize),
+      q,
+      post_id: post_id ? Number(post_id) : null,
+      user_id: user_id ? Number(user_id) : null,
+      from,
+      to,
+      sort,
+      order,
+    });
+
+    return res.status(200).json(JSend.success(result));
   } catch (error) {
     console.error("Lỗi khi lấy danh sách bình luận:", error.message);
     return next(new ApiError(500, "Lỗi khi lấy danh sách bình luận"));

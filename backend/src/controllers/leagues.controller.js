@@ -48,7 +48,7 @@ async function createLeague(req, res, next) {
 
 async function getAllLeagues(req, res, next) {
   try {
-    const leagues = await leagueService.getAllLeagues();
+    const leagues = await leagueService.getAllLeagues(req.query);
     return res.status(200).json(JSend.success(leagues));
   } catch (error) {
     console.error("Lỗi khi lấy danh sách giải đấu:", error.message);

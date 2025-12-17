@@ -132,9 +132,19 @@ async function getPublicPosts({
   offset = undefined,
   fuzzyFields = [],
   q = null,
+  league_slug = null,
+  league_id = null,
 }) {
   const query = knex({ p: "posts" })
     .leftJoin({ u: "users" }, "p.user_id", "u.user_id")
+    .modify((qb) => {
+      if (league_slug || league_id) {
+        qb.join({ pl: 'post_league' }, 'pl.post_id', 'p.post_id')
+          .join({ l: 'leagues' }, 'pl.league_id', 'l.league_id')
+        if (league_slug) qb.where('l.league_slug', league_slug)
+        if (league_id) qb.where('l.league_id', league_id)
+      }
+    })
     .select("p.*", "u.username", "u.email", "u.avatar")
     .where("p.post_status", "published");
 
@@ -159,7 +169,16 @@ async function getPublicPosts({
   query.orderBy("post_create_at", "desc").limit(Number(limit)).offset(effOffset);
 
   // total count with same filters
-  const countQuery = knex({ p: "posts" }).where("p.post_status", "published");
+  const countQuery = knex({ p: "posts" })
+    .modify((qb) => {
+      if (league_slug || league_id) {
+        qb.join({ pl: 'post_league' }, 'pl.post_id', 'p.post_id')
+          .join({ l: 'leagues' }, 'pl.league_id', 'l.league_id')
+        if (league_slug) qb.where('l.league_slug', league_slug)
+        if (league_id) qb.where('l.league_id', league_id)
+      }
+    })
+    .where("p.post_status", "published");
   if (q && fuzzyFields.length > 0) {
     countQuery.where((builder) => {
       fuzzyFields.forEach((field, idx) => {
@@ -265,12 +284,45 @@ async function getPostsByUserId(userId) {
   }
 }
 
+async function getPostBySlug(slug) {
+  try {
+    const post = await knex('posts').where({ post_slug: slug }).first()
+    return post || null
+  } catch (error) {
+    throw new ApiError(500, 'Database query error', error)
+  }
+}
+
+async function getRelatedPostsByLeague(post_id, limit = 5) {
+  try {
+    // Lấy các league của bài viết gốc
+    const leagues = await knex('post_league').where({ post_id }).select('league_id')
+    const ids = leagues.map(l => l.league_id)
+    if (ids.length === 0) return []
+
+    // Lấy các bài khác cùng league, loại trừ chính nó
+    const rows = await knex('post_league as pl')
+      .join('posts as p', 'pl.post_id', 'p.post_id')
+      .whereIn('pl.league_id', ids)
+      .andWhereNot('pl.post_id', post_id)
+      .select('p.post_id', 'p.post_title', 'p.post_slug', 'p.post_images', 'p.post_content', 'p.post_create_at')
+      .orderBy('p.post_create_at', 'desc')
+      .limit(limit)
+
+    return rows
+  } catch (error) {
+    throw new ApiError(500, 'Database query error', error)
+  }
+}
+
 module.exports = {
   transaction,
   createPost,
   addImagesToPost,
   getAllPosts,
   getPostById,
+  getPostBySlug,
+  getRelatedPostsByLeague,
   updatePost,
   deletePost,
   checkFavorite,

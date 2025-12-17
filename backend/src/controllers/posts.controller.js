@@ -129,7 +129,7 @@ async function getAllPosts(req, res, next) {
 }
 
 async function getPublicPosts(req, res, next) {
-  const { q, page = 1, limit = 10, ...rest } = req.query;
+  const { q, page = 1, limit = 10, league_slug = null, league_id = null, ...rest } = req.query;
 
   try {
     const validFields = [
@@ -318,10 +318,35 @@ async function getPostByUserId(req, res, next) {
   }
 }
 
+async function getPostBySlug(req, res, next) {
+  try {
+    const { slug } = req.params;
+    const post = await postService.getPostBySlug(slug);
+    if (!post) return res.status(404).json(JSend.fail("Không tìm thấy bài viết"));
+    return res.status(200).json(JSend.success(post));
+  } catch (error) {
+    return next(new ApiError(500, "Lỗi khi lấy bài viết theo slug"));
+  }
+}
+
+async function getRelatedPosts(req, res, next) {
+  try {
+    const { post_id } = req.params;
+    const { by = 'league', limit = 5 } = req.query;
+    if (by !== 'league') return res.status(400).json(JSend.fail('Tham số by không hợp lệ'));
+    const items = await postService.getRelatedPostsByLeague(Number(post_id), Number(limit));
+    return res.status(200).json(JSend.success(items));
+  } catch (error) {
+    return next(new ApiError(500, "Lỗi khi lấy bài viết liên quan"));
+  }
+}
+
 module.exports = {
   createPost,
   getAllPosts,
   getPostById,
+  getPostBySlug,
+  getRelatedPosts,
   updatePost,
   deletePost,
   reviewPost,

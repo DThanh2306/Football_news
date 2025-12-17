@@ -15,6 +15,9 @@ const careerRouter = require("./routes/careers.router");
 const matchRouter = require("./routes/matches.router");
 const postRelationRouter = require("./routes/postRelations.router");
 const tagsRouter = require("./routes/tags.router");
+const leagueManager =  require("./routes/leagueManagers.router");
+const rbacRouter = require("./routes/rbac.router");
+const standingsRouter = require("./routes/standings.router");
 
 const app = express();
 
@@ -23,7 +26,6 @@ app.use(morgan('dev'));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
-
 
 userRouter.setup(app);
 postRouter.setup(app);
@@ -36,8 +38,8 @@ careerRouter.setup(app);
 matchRouter.setup(app);
 postRelationRouter.setup(app);
 tagsRouter.setup(app);
+leagueManager.setup(app);
+rbacRouter.setup(app);
+standingsRouter.setup(app);
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server listening on port ${PORT}`);
-});
+module.exports = app;

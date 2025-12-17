@@ -4,7 +4,7 @@ const JSend = require("../jsend");
 const clubService = require("../services/clubs.service");
 
 async function createClub(req, res, next) {
-  let { club_name, league_ids = [] } = req.body || {};
+  let { club_name, country, league_ids = [] } = req.body || {};
   const club_img = req.file ? `/uploads/clubs/${req.file.filename}` : null;
 
   if (typeof league_ids === "string") {
@@ -27,6 +27,7 @@ async function createClub(req, res, next) {
 
     const club = await clubService.createClub({
       club_name,
+      country,
       club_img,
       club_slug: slug,
     });
@@ -46,9 +47,9 @@ async function createClub(req, res, next) {
 }
 
 async function getAllClubs(req, res, next) {
-  const { league_id } = req.query;
+  const { league_id, country } = req.query;
   try {
-    const clubs = await clubService.getAllClubs(league_id);
+    const clubs = await clubService.getAllClubs({ league_id, country });
     return res.status(200).json(JSend.success(clubs));
   } catch (error) {
     return next(new ApiError(500, "Lỗi khi lấy danh sách CLB"));
@@ -68,7 +69,7 @@ async function getClubById(req, res, next) {
 
 async function updateClub(req, res, next) {
   const { id } = req.params;
-  let { club_name, club_img, league_ids } = req.body || {};
+  let { club_name, club_img, league_ids, country } = req.body || {};
 
   
   if (req.file) {
@@ -90,6 +91,7 @@ async function updateClub(req, res, next) {
     const updateData = {};
     if (club_name) updateData.club_name = club_name;
     if (club_img) updateData.club_img = club_img;
+    if (country) updateData.country = country;
 
     if (club_name) {
       let slug = slugify(club_name, { lower: true, strict: true });

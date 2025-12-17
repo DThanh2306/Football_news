@@ -28,8 +28,18 @@ async function createLeague(data, trx) {
   }
 }
 
-async function getAllLeagues() {
+async function getAllLeagues({ country } = {}) {
   try {
+    if (country) {
+      // Distinct leagues that have clubs in the given country
+      const rows = await knex("club_league")
+        .join("clubs", "club_league.club_id", "clubs.club_id")
+        .join("leagues", "club_league.league_id", "leagues.league_id")
+        .where("clubs.country", country)
+        .distinct("leagues.league_id", "leagues.league_name", "leagues.league_img", "leagues.league_slug")
+        .orderBy("leagues.league_name", "asc");
+      return rows;
+    }
     return await knex("leagues")
       .select("league_id", "league_name", "league_img", "league_slug")
       .orderBy("league_name", "asc");

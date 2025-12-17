@@ -74,6 +74,7 @@ router.post("/", verifyToken, authorize("matches", "create"), matchesController.
  *       - bearerAuth: []
  */
 router.put("/:match_id", verifyToken, authorize("matches", "update"), matchesController.updateMatch);
+router.patch("/:match_id/score", verifyToken, authorize("matches", "update"), matchesController.updateMatchScore);
 
 /**
  * @swagger
@@ -85,6 +86,9 @@ router.put("/:match_id", verifyToken, authorize("matches", "update"), matchesCon
  *       - bearerAuth: []
  */
 router.delete("/:match_id", verifyToken, authorize("matches", "delete"), matchesController.deleteMatch);
+
+// Import matches from external provider (admin only)
+router.post("/import", verifyToken, authorize("matches", "create"), matchesController.importMatches);
 
 module.exports = {
   setup(app) {

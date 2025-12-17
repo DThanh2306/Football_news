@@ -52,6 +52,7 @@ router.post("/:post_id/favorite", verifyToken, postsController.toggleFavorite);
  *         description: Lỗi máy chủ
  */
 router.get("/favorites", verifyToken, postsController.getFavorites);
+router.get("/:post_id/related", postsController.getRelatedPosts);
 
 /**
  * @swagger
@@ -186,6 +187,7 @@ router.get("/", postsController.getAllPosts);
  *       500:
  *         description: Lỗi máy chủ
  */
+router.get("/slug/:slug", postsController.getPostBySlug);
 router.get("/:post_id", postsController.getPostById);
 
 /**

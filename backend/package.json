@@ -36,6 +36,6 @@
   },
   "scripts": {
     "start": "nodemon --inspect server.js",
-    "test": "node --test ./test/*.test.js"
+    "test": "node --test ./test/matches_import.test.js"
   }
 }

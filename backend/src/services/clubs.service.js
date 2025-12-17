@@ -15,14 +15,23 @@ async function addClubToLeagues(club_id, league_ids) {
   await knex("club_league").insert(records);
 }
 
-async function getAllClubs(league_id) {
+async function getAllClubs({ league_id, country } = {}) {
+  if (league_id && country) {
+    return await knex("club_league")
+      .join("clubs", "club_league.club_id", "clubs.club_id")
+      .where("club_league.league_id", league_id)
+      .andWhere("clubs.country", country)
+      .select("clubs.*");
+  }
   if (league_id) {
     return await knex("club_league")
       .join("clubs", "club_league.club_id", "clubs.club_id")
       .where("club_league.league_id", league_id)
       .select("clubs.*");
   }
-
+  if (country) {
+    return await knex("clubs").where({ country }).select("*");
+  }
   return await knex("clubs").select("*");
 }
 
