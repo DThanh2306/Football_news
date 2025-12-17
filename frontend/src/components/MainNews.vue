@@ -20,7 +20,7 @@
                 class="w-full md:w-40 h-32 object-cover rounded"
               />
               <div>
-                <router-link :to="`/post/${post.post_id}`">
+                <router-link :to="'/post/' + post.post_id">
                   <h3 class="font-semibold text-lg mb-2">
                     {{ post.post_title }}
                   </h3>
@@ -29,7 +29,7 @@
                   {{ post.post_excerpt || (post.post_content ? post.post_content.slice(0, 120) + '...' : '') }}
                 </p>
                 <router-link
-                  :to="`/post/${post.post_id}`"
+                  :to="'/post/' + post.post_id"
                   class="text-blue-600 hover:underline text-sm mt-2 inline-block"
                   >Xem chi tiết</router-link
                 >

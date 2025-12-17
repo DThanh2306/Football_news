@@ -30,9 +30,20 @@ function handleError(error, req, res, next) {
         console.error(`[${req.method} ${req.originalUrl}]`, error.stack || error);
     }
 
+    // Only set safe headers (strings) if provided
+    let safeHeaders = {}
+    if (error && error.headers && typeof error.headers === 'object') {
+      for (const [k, v] of Object.entries(error.headers)) {
+        if (v === undefined || v === null) continue
+        try {
+          safeHeaders[k] = typeof v === 'string' ? v : String(v)
+        } catch (_) { /* skip non-serializable */ }
+      }
+    }
+
     return res
         .status(statusCode)
-        .set(error.headers || {})
+        .set(safeHeaders)
         .json(statusCode >= 500 ? JSend.error(message) : JSend.fail(message));
 }
 module.exports = {methodNotAllowed, resourceNotFound, handleError};

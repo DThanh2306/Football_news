@@ -13,7 +13,7 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, h } from 'vue'
 import axios from '@/utils/axios'
 import { leaguesService } from '@/services/leagues.service'
 import { seasonsService } from '@/services/seasons.service'
@@ -31,16 +31,12 @@ const rows = ref([])
 const columns = [
   { title: '#', dataIndex: 'position', key: 'position', width: 60 },
   { title: 'Đội', dataIndex: 'club_name', key: 'club_name',
-    customRender: ({ text, record }) => {
-      return {
-        children: (
-          <div class="flex items-center gap-2">
-            <img src={record.club_img || 'https://via.placeholder.com/20'} class="w-5 h-5 object-contain" />
-            <span>{text}</span>
-          </div>
-        )
-      }
-    }
+    customRender: ({ text, record }) => ({
+      children: h('div', { class: 'flex items-center gap-2' }, [
+        h('img', { src: record.club_img || 'https://via.placeholder.com/20', class: 'w-5 h-5 object-contain' }),
+        h('span', null, text),
+      ])
+    })
   },
   { title: 'Tr', dataIndex: 'played', key: 'played', align: 'right', width: 70 },
   { title: 'Th', dataIndex: 'won', key: 'won', align: 'right', width: 70 },

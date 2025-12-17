@@ -1,15 +1,15 @@
 <template>
-  <article class="bg-white rounded-2xl shadow overflow-hidden">
-    <router-link :to="`/post/${post.post_slug}`" class="block">
-      <h2 class="text-2xl md:text-3xl font-extrabold text-slate-900 mb-3 leading-tight">
+  <article class="bg-white dark:bg-slate-900 border border-[rgb(var(--border))]/80 dark:border-slate-800 rounded-2xl shadow-soft overflow-hidden theme-transition">
+    <router-link :to="'/post/' + post.post_slug" class="block">
+      <h2 class="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-slate-100 mb-3 leading-tight">
           {{ post.post_title }}
         </h2>
       <img :src="hero" :alt="post.post_title" class="w-full h-64 md:h-96 object-cover" />
     </router-link>
     <div class="p-5">
-      <router-link :to="`/post/${post.post_slug}`">
+      <router-link :to="'/post/' + post.post_slug">
       </router-link>
-      <p class="text-slate-700 text-base md:text-lg leading-relaxed line-clamp-4">
+      <p class="text-slate-700 dark:text-slate-300 text-base md:text-lg leading-relaxed line-clamp-4">
         {{ excerpt }}
       </p>
     </div>

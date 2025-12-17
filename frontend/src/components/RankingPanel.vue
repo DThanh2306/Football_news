@@ -1,14 +1,14 @@
 <template>
-  <div class="bg-white rounded-xl shadow p-4">
-    <h3 class="text-lg font-bold text-blue-700">Scoreboard</h3>
+  <div class="bg-white dark:bg-slate-900 border border-[rgb(var(--border))]/80 dark:border-slate-800 rounded-xl shadow-soft p-4 theme-transition">
+    <h3 class="text-xl font-bold text-slate-900 dark:text-slate-100">Scoreboard</h3>
     <div class="flex items-center justify-between mb-3">
       
       <div class="flex items-center gap-2">
-        <select v-model="selectedSlug" class="border rounded px-2 py-1 text-sm">
+        <select v-model="selectedSlug" class="border border-slate-300/70 dark:border-slate-700 rounded px-2 py-1 text-sm bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 theme-transition">
           <option :value="''">Choose League</option>
           <option v-for="l in leagues" :key="l.league_id" :value="l.league_slug">{{ l.league_name }}</option>
         </select>
-        <select v-model.number="selectedSeason" class="border rounded px-2 py-1 text-sm" :disabled="!seasons.length">
+        <select v-model.number="selectedSeason" class="border border-slate-300/70 dark:border-slate-700 rounded px-2 py-1 text-sm bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 theme-transition" :disabled="!seasons.length">
           <option :value="0">Season</option>
           <option v-for="s in seasons" :key="s.season_id" :value="s.season_id">{{ s.name }}</option>
         </select>
@@ -20,39 +20,36 @@
     <div v-else>
       <table class="w-full text-sm">
         <thead>
-          <tr class="text-slate-500 border-b">
+          <tr class="text-slate-500 dark:text-slate-400 border-b border-slate-200/60 dark:border-slate-800">
             <th class="text-left py-2">#</th>
             <th class="text-left py-2">Team</th>
             <th class="text-right py-2">Played</th>
-            <th class="text-right py-2">Won</th>
-            <th class="text-right py-2">Draw</th>
-            <th class="text-right py-2">Lost</th>
-            <th class="text-right py-2">GD</th>
+            
             <th class="text-right py-2">Points</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="r in rows" :key="r.club_id" class="border-b hover:bg-gray-50">
+          <tr v-for="r in rows" :key="r.club_id" class="border-b border-slate-200/60 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/60 theme-transition">
             <td class="py-1">{{ r.position }}</td>
             <td class="py-1 flex items-center gap-2">
               <img :src="r.club_img || defaultImg" class="w-5 h-5 object-contain" />
               <span class="truncate">{{ r.club_name }}</span>
             </td>
             <td class="py-1 text-right">{{ r.played }}</td>
-            <td class="py-1 text-right">{{ r.won }}</td>
-            <td class="py-1 text-right">{{ r.draw }}</td>
-            <td class="py-1 text-right">{{ r.lost }}</td>
-            <td class="py-1 text-right">{{ r.gd }}</td>
             <td class="py-1 text-right font-semibold">{{ r.points }}</td>
           </tr>
         </tbody>
       </table>
+      <div class="mt-3 text-right">
+        <button @click="goToSchedule" class="inline-flex items-center px-3 py-1.5 text-sm rounded-md bg-primary-600 text-white hover:bg-primary-700 theme-transition">More details</button>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
 import { ref, watch, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import axios from '@/utils/axios'
 import { leaguesService } from '@/services/leagues.service'
 import { seasonsService } from '@/services/seasons.service'
@@ -66,6 +63,7 @@ const selectedSlug = ref('')
 const seasons = ref([])
 const selectedSeason = ref(0)
 const rows = ref([])
+const router = useRouter()
 const loading = ref(false)
 const defaultImg = 'https://via.placeholder.com/24'
 
@@ -112,4 +110,9 @@ onMounted(async () => {
   await fetchSeasonsForLeague()
   await fetchStandings()
 })
+function goToSchedule() {
+  if (!selectedSlug.value) { router.push({ name: 'standings' }); return }
+  router.push({ name: 'standings', query: { league: selectedSlug.value } })
+}
+
 </script>

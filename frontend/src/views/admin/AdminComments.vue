@@ -47,7 +47,7 @@
           </div>
         </template>
         <template v-if="column.key === 'post'">
-          <router-link :to="`/post/${record.post_id}`" class="text-blue-700 hover:underline line-clamp-2">
+          <router-link :to="'/post/' + record.post_id" class="text-blue-700 hover:underline line-clamp-2">
             {{ record.post_title }}
           </router-link>
         </template>
@@ -101,7 +101,7 @@
           </div>
           <div class="mb-2">
             <span class="font-semibold text-blue-700">Post: </span>
-            <router-link :to="`/post/${selectedComment.post_id}`" class="text-blue-700 hover:underline">
+            <router-link :to="'/post/' + selectedComment.post_id" class="text-blue-700 hover:underline">
               {{ selectedComment.post_title }}
             </router-link>
           </div>

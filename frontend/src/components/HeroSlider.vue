@@ -2,7 +2,7 @@
   <div class="relative rounded-2xl overflow-hidden shadow-lg">
     <div v-if="items.length === 0" class="h-56 md:h-72 bg-gray-100 animate-pulse" />
     <div v-else class="h-56 md:h-72 relative">
-      <router-link :to="`/post/${active?.post_slug}`">
+      <router-link :to="active && active.post_slug ? ('/post/' + active.post_slug) : '/posts'">
         <img :src="heroImage" class="w-full h-56 md:h-72 object-cover" :alt="active?.post_title" />
         <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-4">
           <h2 class="text-white text-xl md:text-2xl font-bold line-clamp-2">{{ active?.post_title }}</h2>

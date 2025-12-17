@@ -24,6 +24,8 @@ function normalizeFixture(item) {
     season_id: item.season || league.season || null,
     home_team_name: teams.home?.name || null,
     away_team_name: teams.away?.name || null,
+    home_team_img: teams.home?.logo || null,
+    away_team_img: teams.away?.logo || null,
     home_team_external_id: teams.home?.id != null ? String(teams.home.id) : null,
     away_team_external_id: teams.away?.id != null ? String(teams.away.id) : null,
     home_score,

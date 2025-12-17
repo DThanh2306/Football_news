@@ -1,40 +1,49 @@
 <template>
-  <header class="bg-gradient-to-r from-blue-50 to-blue-100 shadow-sm sticky top-0 z-50">
-    <div
-      class="flex items-center justify-between px-6 py-3 text-sm text-gray-700 max-w-7xl mx-auto"
-    >
+  <header class="sticky top-0 z-50 backdrop-blur supports-backdrop-blur:bg-white/80 bg-white/80 dark:bg-slate-900/80 border-b border-slate-200/60 dark:border-slate-800 theme-transition">
+    <div class="flex items-center justify-between px-4 md:px-6 py-3 max-w-7xl mx-auto">
+      <!-- Left: logo -->
       <div class="flex items-center gap-3">
-        <router-link to="/">
-          <img src="/logo.png" alt="Logo" class="h-20 w-auto drop-shadow" />
+        <router-link to="/" class="flex items-center gap-2">
+          <img src="/logo.png" alt="Logo" class="h-10 w-auto" />
+          <span class="hidden sm:block text-base font-semibold text-slate-800 dark:text-slate-100">Football News</span>
         </router-link>
       </div>
 
-      <div class="flex items-center gap-5">
-        <span class="text-gray-500">{{ today }}</span>
+      <!-- Center: date + quick link -->
+      <div class="hidden md:flex items-center gap-3 text-sm text-slate-600 dark:text-slate-300">
+        <span class="opacity-80">{{ today }}</span>
         <router-link
           to="/"
-          class="border border-blue-300 px-3 py-1 rounded-full hover:bg-blue-100 transition text-sm text-blue-700 font-semibold"
+          class="px-3 py-1 rounded-full border border-slate-300/60 dark:border-slate-700 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-slate-800 theme-transition"
         >
           🌐 Latest News
         </router-link>
       </div>
 
-      <div class="flex items-center gap-4">
+      <!-- Right: search + auth + theme -->
+      <div class="flex items-center gap-3">
         <div class="relative">
           <input
             v-model="searchText"
             @keydown.enter="handleSearch"
             type="text"
             placeholder="CR7, MU, Serie A..."
-            class="pl-4 pr-10 py-1.5 border border-blue-200 rounded-full text-sm outline-none focus:ring-2 focus:ring-blue-400 transition bg-white"
+            class="pl-4 pr-9 py-1.5 border border-slate-300/70 dark:border-slate-700 rounded-full text-sm outline-none focus:ring-2 focus:ring-primary-400 dark:focus:ring-primary-500 theme-transition bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200"
           />
           <button
-            class="absolute right-1.5 top-[5px] text-blue-500 text-base"
+            class="absolute right-2 top-1.5 text-primary-600 dark:text-primary-400 text-base"
             @click="handleSearch"
+            aria-label="Search"
           >
             🔍
           </button>
         </div>
+
+        <!-- Theme toggle -->
+        <button @click="toggleTheme" class="w-9 h-9 rounded-full border border-slate-300/70 dark:border-slate-700 flex items-center justify-center text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 theme-transition" :title="isDark ? 'Chế độ sáng' : 'Chế độ tối'">
+          <span v-if="isDark">☀️</span>
+          <span v-else>🌙</span>
+        </button>
 
         <div>
           <template v-if="isLoggedIn">
@@ -55,10 +64,7 @@
                   </a-menu-item>
                 </a-menu>
               </template>
-              <a-button
-                type="primary"
-                class="bg-blue-600 border-blue-600 hover:bg-blue-700 hover:border-blue-700"
-              >
+              <a-button type="primary" class="bg-primary-600 border-primary-600 hover:bg-primary-700 hover:border-primary-700">
                 {{ user?.username }}
                 <DownOutlined />
               </a-button>
@@ -66,37 +72,32 @@
           </template>
           <template v-else>
             <router-link>
-              <a-button
-                type="primary"
-                class="bg-blue-600 border-blue-600 hover:bg-blue-700 hover:border-blue-700"
-                @click="openLogin"
-                >Login</a-button
-              >
+              <a-button type="primary" class="bg-primary-600 border-primary-600 hover:bg-primary-700 hover:border-primary-700" @click="openLogin">Login</a-button>
             </router-link>
           </template>
         </div>
       </div>
     </div>
 
-    <nav
-      class="flex items-center justify-between gap-6 px-6 py-3 text-sm max-w-7xl mx-auto font-semibold text-gray-700 overflow-x-auto whitespace-nowrap border-t border-blue-200 bg-blue-50 bg-gradient-to-r from-blue-50 to-blue-100 shadow-sm sticky top-0 z-50"
-    >
-      <router-link to="/" :class="navClass('/')">Home</router-link>
-      <router-link to="/posts" :class="navClass('/posts')">Latest News</router-link>
-      <router-link to="/schedule" :class="navClass('/schedule')">Schedule</router-link>
-      <router-link to="/standings" :class="navClass('/standings')">Scoreboard</router-link>
-      <a-dropdown trigger="hover">
-        <a class="ant-dropdown-link" @click.prevent>
-          League ▾
-        </a>
-        <template #overlay>
-          <a-menu>
-            <a-menu-item v-for="l in leagues" :key="l.league_id">
-              <router-link :to="`/league/${l.league_slug}`">{{ l.league_name }}</router-link>
-            </a-menu-item>
-          </a-menu>
-        </template>
-      </a-dropdown>
+    <nav class="max-w-7xl mx-auto px-4 md:px-6 pb-3 -mt-2">
+      <div class="flex items-center gap-2 overflow-x-auto whitespace-nowrap">
+        <router-link to="/" :class="navClass('/')" class="px-3 py-1.5 rounded-full border theme-transition">Home</router-link>
+        <router-link to="/posts" :class="navClass('/posts')" class="px-3 py-1.5 rounded-full border theme-transition">Latest News</router-link>
+        <router-link to="/schedule" :class="navClass('/schedule')" class="px-3 py-1.5 rounded-full border theme-transition">Schedule</router-link>
+        <router-link to="/standings" :class="navClass('/standings')" class="px-3 py-1.5 rounded-full border theme-transition">Scoreboard</router-link>
+        <a-dropdown trigger="hover">
+          <a class="ant-dropdown-link px-3 py-1.5 rounded-full border theme-transition" @click.prevent>
+            League ▾
+          </a>
+          <template #overlay>
+            <a-menu>
+              <a-menu-item v-for="l in leagues" :key="l.league_id">
+                <router-link :to="'/league/' + l.league_slug">{{ l.league_name }}</router-link>
+              </a-menu-item>
+            </a-menu>
+          </template>
+        </a-dropdown>
+      </div>
     </nav>
     <loginForm ref="authModal" />
   </header>
@@ -104,17 +105,16 @@
 
 <script setup>
 import { useRoute, useRouter } from 'vue-router'
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import dayjs from 'dayjs'
 import 'dayjs/locale/vi'
 import { UserOutlined, LogoutOutlined, DownOutlined } from '@ant-design/icons-vue'
 import loginForm from '@/components/LoginForm.vue'
 import { leaguesService } from '@/services/leagues.service'
-import { tagsService } from '@/services/tags.service'
 
 dayjs.locale('vi')
-const today = dayjs().format('dddd, hh:mm, DD/MM/YYYY')
+const today = dayjs().format('dddd, HH:mm, DD/MM/YYYY')
 
 const route = useRoute()
 const router = useRouter()
@@ -122,19 +122,33 @@ const auth = useAuthStore()
 const authModal = ref(null)
 const searchText = ref('')
 const leagues = ref([])
-const tags = ref([])
 
-const openLogin = () => {
-  authModal.value.open()
-}
+const openLogin = () => { authModal.value.open() }
 
 const isLoggedIn = computed(() => !!auth.token)
 const user = computed(() => auth.user)
 
+const isDark = ref(false)
+function applyTheme(dark) {
+  const root = document.documentElement
+  if (dark) root.classList.add('dark')
+  else root.classList.remove('dark')
+  localStorage.setItem('theme', dark ? 'dark' : 'light')
+}
+function toggleTheme() { isDark.value = !isDark.value; applyTheme(isDark.value) }
+
+onMounted(() => {
+  const saved = localStorage.getItem('theme')
+  if (saved) isDark.value = saved === 'dark'
+  else isDark.value = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+  applyTheme(isDark.value)
+})
+
 const navClass = (path) => {
-  return route.path.startsWith(path)
-    ? 'text-blue-600 border-b-2 border-blue-600 pb-1'
-    : 'hover:text-blue-600 transition pb-1'
+  const active = route.path.startsWith(path)
+  return active
+    ? 'bg-primary-600 text-white border-primary-600'
+    : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-300/60 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'
 }
 
 const goToProfile = () => router.push('/profile')
@@ -145,9 +159,7 @@ function handleSearch() {
   router.push({ path: '/posts', query: { q: searchText.value.trim() } })
 }
 
-const handleLogout = () => {
-  auth.logout()
-}
+const handleLogout = () => { auth.logout() }
 
 // load leagues for header nav dynamically
 ;(async () => {

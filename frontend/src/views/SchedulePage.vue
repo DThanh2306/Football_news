@@ -1,223 +1,151 @@
 <template>
-  <div class="bg-white min-h-screen py-4">
-    <h1 class="text-3xl font-bold text-blue-800 text-center mb-6">
-      Lịch thi đấu bóng đá hôm nay, LTĐ ngày mai mới nhất
-    </h1>
-    <div class="max-w-7xl mx-auto flex flex-col lg:flex-row gap-6">
-
-      <aside class="w-full lg:w-64 flex-shrink-0">
-        <div class="bg-gray-50 rounded-lg shadow mb-4">
-          <div class="font-bold px-4 py-2 bg-gray-200 rounded-t-lg">GIẢI NỔI BẬT</div>
-          <ul>
-            <li
-              v-for="g in topLeagues"
-              :key="g"
-              class="px-4 py-2 border-b hover:bg-blue-50 cursor-pointer"
-            >
-              {{ g }}
-            </li>
-          </ul>
-        </div>
-        <div class="bg-gray-50 rounded-lg shadow">
-          <div class="font-bold px-4 py-2 bg-gray-200 rounded-t-lg">KHU VỰC</div>
-          <ul>
-            <li v-for="region in regions" :key="region.name" class="px-4 py-2 border-b">
-              <span class="font-semibold">{{ region.name }}</span>
-              <ul v-if="region.leagues" class="pl-4">
-                <li
-                  v-for="l in region.leagues"
-                  :key="l"
-                  class="py-1 hover:underline cursor-pointer text-blue-700"
-                >
-                  {{ l }}
-                </li>
-              </ul>
-            </li>
-          </ul>
-        </div>
+  <div class="min-h-screen py-4 px-4 bg-[rgb(var(--bg))] theme-transition">
+    <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-[16rem_1fr] gap-6">
+      <!-- Sidebar filters -->
+      <aside class="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 rounded-xl shadow-soft p-4 space-y-4">
+        <h2 class="text-lg font-bold text-slate-900 dark:text-slate-100">Bộ lọc</h2>
+        <label class="block text-sm mb-1 text-slate-600 dark:text-slate-300">Giải đấu</label>
+        <select v-model="selectedSlug" class="w-full border border-slate-300/70 dark:border-slate-700 rounded px-3 py-2 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200">
+          <option :value="''">Tất cả</option>
+          <option v-for="l in leagues" :key="l.league_id" :value="l.league_slug">{{ l.league_name }}</option>
+        </select>
+        <label class="block text-sm mb-1 text-slate-600 dark:text-slate-300">Ngày</label>
+        <input type="date" v-model="selectedDate" class="w-full border border-slate-300/70 dark:border-slate-700 rounded px-3 py-2 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200" />
       </aside>
 
-      <div class="flex-1">
-
-        <div class="flex justify-between mb-4 overflow-x-auto">
-          <button
-            v-for="(d, idx) in dates"
-            :key="d.label"
-            class="px-4 py-2 rounded-t font-semibold border-b-4"
-            :class="
-              idx === 0
-                ? 'bg-blue-600 text-white border-blue-700'
-                : 'bg-gray-100 text-gray-700 border-transparent hover:bg-blue-50'
-            "
-          >
-            {{ d.label }}<br /><span class="text-xs font-normal">{{ d.sub }}</span>
-          </button>
-          <button
-            class="px-4 py-2 rounded-t bg-gray-200 text-gray-700 font-semibold border-b-4 border-transparent"
-          >
-            Chọn ngày
-          </button>
+      <!-- Main content -->
+      <section class="space-y-4">
+        <div class="flex items-center justify-between">
+          <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100">Lịch thi đấu</h1>
+          <div class="text-sm text-slate-600 dark:text-slate-400">{{ subtitle }}</div>
         </div>
 
-        <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-2">
-          <h2 class="text-2xl font-bold text-blue-700">Lịch bóng đá hôm nay, rạng sáng mai</h2>
-          <div class="relative w-full md:w-96">
-            <input
-              type="text"
-              placeholder="Tìm kiếm trận đấu, giải đấu hôm nay, ngày mai"
-              class="w-full border border-blue-300 rounded px-4 py-2 pl-10 focus:outline-none focus:ring-2 focus:ring-blue-400"
-            />
-            <svg
-              class="absolute left-3 top-3 w-5 h-5 text-blue-400"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              viewBox="0 0 24 24"
-            >
-              <circle cx="11" cy="11" r="8" />
-              <path d="M21 21l-4.35-4.35" />
-            </svg>
-          </div>
+        <div v-if="loading" class="space-y-3">
+          <div v-for="i in 6" :key="i" class="h-16 bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 rounded-xl animate-pulse"></div>
         </div>
-
-        <div class="flex gap-2 mb-2">
-          <button class="px-4 py-2 rounded bg-blue-600 text-white font-semibold">Tất cả</button>
-          <button
-            class="px-4 py-2 rounded bg-blue-100 text-blue-700 font-semibold flex items-center gap-1"
-          >
-            HOT <span>⚡</span>
-          </button>
-          <button class="px-4 py-2 rounded bg-blue-100 text-blue-700 font-semibold">
-            Vừa diễn ra
-          </button>
-          <button class="px-4 py-2 rounded bg-blue-100 text-blue-700 font-semibold">
-            Đang diễn ra
-          </button>
-          <button class="px-4 py-2 rounded bg-blue-100 text-blue-700 font-semibold">
-            Sắp diễn ra
-          </button>
-        </div>
-
-        <div class="bg-white rounded-lg shadow">
-          <div class="flex items-center justify-between px-4 py-2 border-b bg-gray-50">
-            <span class="font-semibold">Lịch thi đấu Premier League</span>
-            <div class="flex gap-4 text-blue-700 font-semibold text-sm">
-              <span class="cursor-pointer">LTĐ</span>
-              <span class="cursor-pointer">KQ</span>
-              <span class="cursor-pointer">BXH</span>
-            </div>
-          </div>
-          <div>
-            <div
-              v-for="match in matches"
-              :key="match.id"
-              class="flex items-center px-4 py-3 border-b hover:bg-blue-50"
-            >
-              <span class="w-28 text-gray-500 text-center text-sm">{{ match.time }}</span>
-              <span class="w-20 text-gray-500 text-center text-xs">{{ match.stage }}</span>
-              <span class="flex-1 grid grid-cols-5 items-center">
-                <div class="col-span-2 flex items-center gap-2 justify-center min-w-0">
-                  <img :src="match.homeLogo" alt="home" class="w-6 h-6 object-contain" />
-                  <span class="font-semibold truncate">{{ match.home }}</span>
-                </div>
-                <div class="col-span-1 flex justify-start">
-                  <span class="bg-blue-600 text-white px-4 py-1 rounded font-bold">vs</span>
-                </div>
-                <div class="col-span-2 flex items-center gap-2 justify-start min-w-0">
-                  <span class="font-semibold truncate">{{ match.away }}</span>
-                  <img :src="match.awayLogo" alt="away" class="w-6 h-6 object-contain" />
-                </div>
-              </span>
-              <span class="w-12 text-xs text-blue-700 font-bold text-center">ND</span>
-              <svg
-                class="w-5 h-5 text-blue-400 ml-2"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                viewBox="0 0 24 24"
-              >
-                <path d="M9 5l7 7-7 7" />
-              </svg>
+        <div v-else-if="error" class="text-red-600">{{ error }}</div>
+        <div v-else>
+          <div v-for="g in groups" :key="g.id" class="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 rounded-xl shadow-soft overflow-hidden mb-4">
+            <div class="px-4 py-2 text-center font-semibold bg-slate-50 dark:bg-slate-800 text-emerald-700 dark:text-emerald-400">{{ g.title }}</div>
+            <div v-for="m in g.matches" :key="m.id" class="flex items-center justify-between px-4 py-3 border-t border-slate-200/60 dark:border-slate-800">
+              <div class="flex items-center gap-2 min-w-0">
+                <img :src="m.home.logo" class="w-6 h-6 object-contain" alt="" />
+                <span class="truncate">{{ m.home.name }}</span>
+              </div>
+              <div class="min-w-[56px] px-2 py-1 text-sm font-bold rounded-md text-center" :class="pillClass(m.status)">
+                <template v-if="m.status === 'scheduled'">{{ m.time }}</template>
+                <template v-else>{{ safeScore(m.home.score) }} - {{ safeScore(m.away.score) }}</template>
+              </div>
+              <div class="flex items-center gap-2 min-w-0 justify-end">
+                <span class="truncate text-right text-slate-700 dark:text-slate-200">{{ m.away.name }}</span>
+                <img :src="m.away.logo" class="w-6 h-6 object-contain" alt="" />
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </section>
     </div>
   </div>
 </template>
 
 <script setup>
-const topLeagues = [
-  'Premier League',
-  'V-League',
-  'Champions League',
-  'Europa League',
-  'La Liga',
-  'Serie A',
-  'Bundesliga',
-  'Ligue 1',
-]
+import { ref, computed, onMounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
+import { matchesService } from '@/services/matches.service'
+import { leaguesService } from '@/services/leagues.service'
+import axios from '@/utils/axios'
 
-const regions = [
-  { name: 'Anh', leagues: ['Premier League', 'Championship'] },
-  { name: 'Việt Nam', leagues: ['V-League', 'Hạng Nhất'] },
-  { name: 'Đức', leagues: ['Bundesliga', 'Bundesliga 2'] },
-]
+const route = useRoute()
 
-const dates = [
-  { label: 'Hôm nay', sub: 'Thứ 6' },
-  { label: 'Ngày mai', sub: 'Thứ 7' },
-  { label: '10/08', sub: 'CN' },
-  { label: '11/08', sub: 'Thứ 2' },
-  { label: '12/08', sub: 'Thứ 3' },
-  { label: '13/08', sub: 'Thứ 4' },
-  { label: '14/08', sub: 'Thứ 5' },
-]
+const leagues = ref([])
+const selectedSlug = ref('')
+const selectedDate = ref(new Date().toISOString().slice(0,10))
+const loading = ref(false)
+const error = ref('')
+const groups = ref([])
 
-const matches = [
-  {
-    id: 1,
-    time: '00:00 - 08/08',
-    stage: 'V.Loại',
-    home: 'Arsernal',
-    homeLogo: '/public/Arsenal.svg',
-    homeScore: 0,
-    awayScore: 2,
-    away: 'Manchester City',
-    awayLogo: '/public/Manchester_City.svg',
-  },
-  {
-    id: 2,
-    time: '00:30 - 08/08',
-    stage: 'V.Loại',
-    home: 'Sheffield United',
-    homeLogo: '/public/Sheffield.png',
-    homeScore: 0,
-    awayScore: 0,
-    away: 'Nottingham Forest',
-    awayLogo: '/public/Nottingham_Forest.webp',
-  },
-  {
-    id: 3,
-    time: '01:00 - 08/08',
-    stage: 'V.Loại',
-    home: 'Manchester United',
-    homeLogo: '/public/Manchester_United.svg',
-    homeScore: 1,
-    awayScore: 1,
-    away: 'Liverpool',
-    awayLogo: '/public/Liverpool.svg',
-  },
-  {
-    id: 4,
-    time: '01:00 - 08/08',
-    stage: 'V.Loại',
-    home: 'Leicester City',
-    homeLogo: '/public/Leicester_City.webp',
-    homeScore: 0,
-    awayScore: 0,
-    away: 'Southampton',
-    awayLogo: '/public/Southampton.svg',
-  },
-]
+const subtitle = computed(() => {
+  const date = selectedDate.value
+  const league = leagues.value.find(l => l.league_slug === selectedSlug.value)
+  return [league?.league_name, date].filter(Boolean).join(' • ')
+})
+
+function pillClass(status) {
+  if (status === 'scheduled') return 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+  if (status === 'live') return 'bg-red-50 text-red-600 border border-red-200'
+  return 'bg-emerald-100 text-emerald-700 border border-emerald-200'
+}
+function safeScore(v) { return typeof v === 'number' ? v : '-' }
+
+async function fetchLeagues() {
+  try {
+    const res = await leaguesService.getAllLeagues()
+    leagues.value = Array.isArray(res?.data) ? res.data : res
+  } catch {
+    leagues.value = []
+  }
+}
+
+async function loadSchedule() {
+  loading.value = true
+  error.value = ''
+  groups.value = []
+  try {
+    const league = leagues.value.find(l => l.league_slug === selectedSlug.value)
+    const params = { pageSize: 50, sort: 'match_date', order: 'asc' }
+    if (league) params.league_id = league.league_id
+
+    const [matchesRes, clubsRes, leaguesRes] = await Promise.all([
+      matchesService.getAllMatches(params),
+      axios.get('/clubs'),
+      axios.get('/leagues'),
+    ])
+
+    const matches = Array.isArray(matchesRes?.items) ? matchesRes.items : (Array.isArray(matchesRes) ? matchesRes : [])
+    const clubs   = clubsRes?.data?.data || []
+    const leaguesMap = new Map((leaguesRes?.data?.data || []).map(l => [l.league_id, l]))
+    const clubById   = new Map(clubs.map(c => [c.club_id, c]))
+
+    const byLeague = new Map()
+    for (const m of matches) {
+      const lid = m.league_id
+      if (!byLeague.has(lid)) byLeague.set(lid, [])
+      byLeague.get(lid).push(m)
+    }
+
+    groups.value = Array.from(byLeague.entries()).map(([lid, list]) => {
+      const league = leaguesMap.get(lid)
+      const title = league ? league.league_name : `League ${lid}`
+      const mapped = list.map(row => {
+        const home = clubById.get(row.home_fc_id)
+        const away = clubById.get(row.away_fc_id)
+        const dt = row.match_date ? new Date(row.match_date) : null
+        const hh = dt ? String(dt.getHours()).padStart(2,'0') : '--'
+        const mm = dt ? String(dt.getMinutes()).padStart(2,'0') : '--'
+        return {
+          id: row.match_id,
+          status: row.status || 'scheduled',
+          time: `${hh}:${mm}`,
+          home: { id: row.home_fc_id, name: home?.club_name || `Club ${row.home_fc_id}`, logo: home?.club_img || '/placeholder.png', score: row.home_score ?? null },
+          away: { id: row.away_fc_id, name: away?.club_name || `Club ${row.away_fc_id}`, logo: away?.club_img || '/placeholder.png', score: row.away_score ?? null },
+        }
+      })
+      return { id: String(lid), title, matches: mapped }
+    })
+  } catch (e) {
+    error.value = e?.message || 'Lỗi khi tải dữ liệu'
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(async () => {
+  await fetchLeagues()
+  // Init from query ?league
+  const qLeague = route.query.league
+  if (typeof qLeague === 'string') selectedSlug.value = qLeague
+  await loadSchedule()
+})
+
+watch([selectedSlug, selectedDate], loadSchedule)
 </script>

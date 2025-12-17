@@ -1,7 +1,7 @@
 <template>
-  <aside class="sticky top-44 w-full lg:w-80 flex-shrink-0">
-    <div class="bg-white rounded-lg shadow overflow-hidden mb-6">
-      <div class="px-4 py-3 border-b bg-slate-100 text-center font-bold text-slate-700">
+  <aside class="sticky top-44 w-full flex-shrink-0">
+    <div class="bg-white dark:bg-slate-900 border border-[rgb(var(--border))]/80 dark:border-slate-800 rounded-lg shadow-soft overflow-hidden mb-6 theme-transition">
+      <div class="px-4 py-3 border-b bg-slate-100 dark:bg-slate-800 text-center font-bold text-slate-700 dark:text-slate-100 border-slate-200/60 dark:border-slate-800 theme-transition">
         Schedule
       </div>
 
@@ -15,8 +15,8 @@
       <div v-else-if="error" class="p-4 text-red-600">{{ error }}</div>
 
       <div v-else>
-        <div v-for="g in scheduleGroups" :key="g.id" class="border-b last:border-b-0">
-          <div class="px-4 py-2 text-center font-semibold bg-slate-50 text-emerald-700">
+        <div v-for="g in scheduleGroups" :key="g.id" class="border-b border-slate-200/60 dark:border-slate-800 last:border-b-0 theme-transition">
+          <div class="px-4 py-2 text-center font-semibold bg-slate-50 dark:bg-slate-800 text-emerald-700 dark:text-emerald-400 theme-transition">
             {{ g.title }}
           </div>
 
@@ -32,7 +32,7 @@
             </div>
 
             <div class="flex items-center gap-2 min-w-0 justify-end">
-              <span class="truncate text-right">{{ m.away.name }}</span>
+              <span class="truncate text-right text-slate-700 dark:text-slate-200">{{ m.away.name }}</span>
               <img :src="m.away.logo" class="w-6 h-6 object-contain" alt="" />
             </div>
           </div>

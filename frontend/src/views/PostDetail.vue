@@ -1,25 +1,25 @@
 <template>
-  <div class="max-w-7xl mx-auto py-8 px-4 flex flex-col lg:flex-row gap-8">
+  <div class="max-w-7xl mx-auto py-8 px-4 flex flex-col lg:flex-row gap-8 bg-[rgb(var(--bg))] theme-transition">
 
     <div class="flex-1">
-      <div class="bg-white rounded-2xl shadow-xl p-4 border border-blue-100">
+      <div class="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 rounded-2xl shadow-soft p-4 theme-transition">
 
-        <h1 class="text-3xl font-bold text-blue-800 mb-4 leading-tight">
+        <h1 class="text-3xl font-bold text-slate-900 dark:text-slate-100 mb-4 leading-tight">
           {{ post.post_title }}
         </h1>
 
-        <div class="flex flex-wrap items-center gap-4 mb-6 text-sm text-gray-500">
+        <div class="flex flex-wrap items-center gap-4 mb-6 text-sm text-slate-600 dark:text-slate-300">
           <span class="inline-flex items-center gap-1"> 🗓️ {{ today }} </span>
-          <button class="inline-flex items-center gap-1 px-2 py-1 rounded border hover:bg-slate-50" @click="copyLink">
+          <button class="inline-flex items-center gap-1 px-2 py-1 rounded border border-slate-300/70 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 theme-transition" @click="copyLink">
             🔗 Copy url
           </button>
-          <button class="inline-flex items-center gap-1 px-2 py-1 rounded border hover:bg-slate-50" @click="share">
+          <button class="inline-flex items-center gap-1 px-2 py-1 rounded border border-slate-300/70 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 theme-transition" @click="share">
             📤 Share
           </button>
         </div>
 
         <div v-if="tags.length" class="mt-1 mb-4 flex flex-wrap gap-2">
-          <span v-for="t in tags" :key="t" class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-semibold">
+          <span v-for="t in tags" :key="t" class="bg-primary-50 text-primary-700 dark:bg-slate-800 dark:text-primary-300 px-3 py-1 rounded-full text-xs font-semibold border border-primary-200/70 dark:border-slate-700">
             #{{ t }}
           </span>
         </div>
@@ -29,7 +29,7 @@
             v-for="(img, idx) in post.post_images"
             :key="idx"
             @click="openLightbox(idx)"
-            class="w-full md:w-[calc(50%-8px)] lg:w-[calc(33.333%-10px)] rounded-xl overflow-hidden border shadow group"
+            class="w-full md:w-[calc(50%-8px)] lg:w-[calc(33.333%-10px)] rounded-xl overflow-hidden border border-slate-200/60 dark:border-slate-800 shadow-soft group theme-transition"
           >
             <img
               :src="img.replace(/'/g, '')"
@@ -39,16 +39,16 @@
           </button>
         </div>
         <div
-          class="prose prose-blue max-w-none text-gray-800 text-justify leading-relaxed prose-img:rounded-xl prose-img:shadow"
+          class="prose prose-slate dark:prose-invert max-w-none text-slate-800 dark:text-slate-200 leading-relaxed prose-img:rounded-xl prose-img:shadow"
           v-html="post.post_content"
         ></div>
 
-        <div class="mt-10 pt-8 border-t border-slate-200">
-          <h2 class="text-lg font-semibold text-blue-800 mb-4">Comments ({{ comments.length }})</h2>
+        <div class="mt-10 pt-8 border-t border-slate-200 dark:border-slate-800">
+          <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">Comments ({{ comments.length }})</h2>
 
           <div v-if="currentUser" class="mb-6">
             <div class="flex items-start gap-3 mb-2">
-              <img :src="currentUser.avatar || defaultAvatar" class="w-10 h-10 rounded-full object-cover border" />
+              <img :src="currentUser.avatar || defaultAvatar" class="w-10 h-10 rounded-full object-cover border border-slate-200/60 dark:border-slate-800" />
               <div class="flex-1">
                 <a-textarea
                   v-model:value="newComment"
@@ -64,7 +64,7 @@
             </div>
           </div>
 
-          <div v-else class="text-gray-500 italic mb-4">Login to comment.</div>
+          <div v-else class="text-slate-500 dark:text-slate-400 italic mb-4">Login to comment.</div>
 
           <div v-if="comments.length === 0" class="text-gray-500 italic">Start a conversation here.</div>
 
@@ -72,7 +72,7 @@
             <div
               v-for="c in comments"
               :key="c.cmt_id"
-              class="flex items-start gap-4 bg-blue-50/50 border border-blue-100 p-4 rounded-xl shadow-sm"
+              class="flex items-start gap-4 bg-slate-50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-800 p-4 rounded-xl shadow-soft theme-transition"
             >
               <img :src="c.user_avatar || defaultAvatar" class="w-10 h-10 rounded-full object-cover border" alt="avatar" />
               <div class="flex-1">
@@ -89,8 +89,8 @@
     </div>
 
     <aside class="w-full lg:w-80 flex-shrink-0">
-      <div class="sticky top-44 bg-white rounded-2xl shadow-xl border border-blue-100 p-4">
-        <h2 class="text-xl font-bold text-blue-700 mb-4">Related News</h2>
+      <div class="sticky top-44 bg-white dark:bg-slate-900 rounded-2xl shadow-soft border border-slate-200/60 dark:border-slate-800 p-4 theme-transition">
+        <h2 class="text-xl font-bold text-slate-900 dark:text-slate-100 mb-4">Related News</h2>
         <ul class="space-y-4">
           <li v-for="related in relatedPosts" :key="related.id" class="flex gap-3">
             <img
@@ -100,7 +100,7 @@
             />
             <div>
               <router-link
-                :to="`/post/${related.id}`"
+                :to="'/post/' + related.id"
                 class="font-semibold text-black-700 hover:underline"
               >
                 {{ related.title }}
@@ -132,7 +132,7 @@ const authModal = ref(null)
 const comments = ref([])
 const newComment = ref('')
 const relatedPosts = ref([])
-const today = dayjs().format('dddd, hh:mm, DD/MM/YYYY')
+const today = dayjs().format('dddd, HH:mm, DD/MM/YYYY')
 
 const tags = computed(() => Array.isArray(post.value.tag_id) ? post.value.tag_id : [])
 
@@ -146,6 +146,26 @@ async function fetchComments() {
     comments.value = res.data || []
   } catch (err) {
     console.error('Lỗi khi lấy bình luận:', err)
+  }
+}
+
+function openLightbox(idx) { lightboxIndex.value = idx }
+function closeLightbox() { lightboxIndex.value = -1 }
+
+async function copyLink() {
+  try {
+    await navigator.clipboard.writeText(window.location.href)
+  } catch (e) {
+    console.warn('Cannot copy to clipboard', e)
+  }
+}
+
+async function share() {
+  const data = { title: post.value?.post_title || document.title, text: post.value?.post_title || '', url: window.location.href }
+  if (navigator.share) {
+    try { await navigator.share(data) } catch(e){ /* user cancelled */ }
+  } else {
+    await copyLink()
   }
 }
 

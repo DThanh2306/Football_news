@@ -12,10 +12,10 @@ async function searchMatches({ page = 1, pageSize = 10, q = '', league_id = null
       .leftJoin('clubs as away', 'matches.away_fc_id', 'away.club_id')
       .select(
         'matches.*',
-        'home.club_name as home_name',
-        'home.club_img as home_img',
-        'away.club_name as away_name',
-        'away.club_img as away_img'
+        knex.raw('COALESCE(home.club_name, matches.home_team_name) as home_name'),
+        knex.raw('COALESCE(home.club_img, matches.home_team_img) as home_img'),
+        knex.raw('COALESCE(away.club_name, matches.away_team_name) as away_name'),
+        knex.raw('COALESCE(away.club_img, matches.away_team_img) as away_img')
       );
 
     if (q) {
@@ -218,7 +218,7 @@ async function importMatchesFromProvider({ provider, date_from, date_to, league_
         mapped_away_id = mapped_away_id || await mapClubByNameScoped(fx.away_team_name)
       }
 
-      // Team name mapping: only try when we have a scoping hint (league_id or country)
+      // Team name mapping (scoped): only when we have hint (league_id or country) and id not already mapped
       if (league_id || country) {
         async function mapClubByName(name) {
           if (!name) return null
@@ -240,8 +240,19 @@ async function importMatchesFromProvider({ provider, date_from, date_to, league_
           return row?.club_id || null
         }
 
-        mapped_home_id = await mapClubByName(fx.home_team_name)
-        mapped_away_id = await mapClubByName(fx.away_team_name)
+        if (!mapped_home_id) mapped_home_id = await mapClubByName(fx.home_team_name)
+        if (!mapped_away_id) mapped_away_id = await mapClubByName(fx.away_team_name)
+      }
+
+      // Normalize round to number-like string (e.g., EPL wants just number)
+      function extractRoundNumber(r) {
+        if (r == null) return null
+        if (typeof r === 'number') return String(r)
+        const s = String(r)
+        // common patterns: "Regular Season - 1", "Matchday 3", "MD 3", "Round 7"
+        const nums = s.match(/\d+/g)
+        if (nums && nums.length) return String(Number(nums[nums.length - 1]))
+        return s // fallback keep original
       }
 
       const fullPayload = {
@@ -251,12 +262,17 @@ async function importMatchesFromProvider({ provider, date_from, date_to, league_
         away_fc_id: mapped_away_id ?? fx.away_fc_id ?? null,
         match_date: fx.match_date,
         status: fx.status || 'scheduled',
-        round: fx.round ?? null,
+        round: extractRoundNumber(fx.round),
         home_score: fx.home_score ?? null,
         away_score: fx.away_score ?? null,
         external_source: source,
         external_id: fx.external_id,
+        home_team_name: fx.home_team_name || null,
+        away_team_name: fx.away_team_name || null,
+        home_team_img: fx.home_team_img || null,
+        away_team_img: fx.away_team_img || null,
       };
+
       // Filter payload by existing columns
       // Filter payload by existing columns and drop null for home/away ids to let DB defaults apply
       const payload = Object.fromEntries(

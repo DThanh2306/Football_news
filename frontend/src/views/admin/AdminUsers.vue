@@ -56,7 +56,7 @@
         </template>
 
         <template v-else-if="column.key === 'email'">
-          <a :href="`mailto:${record.email}`" class="text-blue-600 hover:underline">{{
+          <a :href="'mailto:' + record.email" class="text-blue-600 hover:underline">{{
             record.email
           }}</a>
         </template>
@@ -98,7 +98,7 @@
           />
           <h2 class="text-lg font-bold">{{ selectedUser.username }}</h2>
           <p class="text-sm text-gray-500 break-all">
-            <a :href="`mailto:${selectedUser.email}`" class="text-blue-600 hover:underline">{{
+            <a :href="'mailto:' + selectedUser.email" class="text-blue-600 hover:underline">{{
               selectedUser.email
             }}</a>
           </p>

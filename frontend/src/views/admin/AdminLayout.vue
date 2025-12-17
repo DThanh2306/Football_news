@@ -62,13 +62,13 @@ import LoginForm from '@/components/LoginForm.vue'
 
 const menu = [
   { label: 'Dashboard', path: '/admin', icon: '🏠' },
-  { label: 'Người dùng', path: '/admin/users', icon: '👤' },
-  { label: 'Bài viết', path: '/admin/posts', icon: '📝' },
-  { label: 'Bình luận', path: '/admin/comments', icon: '💬' },
-  { label: 'Giải đấu', path: '/admin/leagues', icon: '🏆' },
-  { label: 'Lịch thi đấu', path: '/admin/matches', icon: '📅' },
-  { label: 'Câu lạc bộ', path: '/admin/clubs', icon: '⚽' },
-  { label: 'Cầu thủ', path: '/admin/players', icon: '🥇' },
+  { label: 'Users', path: '/admin/users', icon: '👤' },
+  { label: 'Posts', path: '/admin/posts', icon: '📝' },
+  { label: 'Comments', path: '/admin/comments', icon: '💬' },
+  { label: 'Leagues', path: '/admin/leagues', icon: '🏆' },
+  { label: 'Matches', path: '/admin/matches', icon: '📅' },
+  { label: 'Clubs', path: '/admin/clubs', icon: '⚽' },
+  { label: 'Players', path: '/admin/players', icon: '🥇' },
   // { label: 'Cài đặt', path: '/admin/settings', icon: '⚙️' }
 ]
 

@@ -1,14 +1,14 @@
 <template>
-  <article class="bg-white rounded-xl shadow hover:shadow-md transition overflow-hidden p-3">
+  <article class="bg-white dark:bg-slate-900 border border-[rgb(var(--border))]/80 dark:border-slate-800 rounded-xl shadow-soft hover:shadow transition overflow-hidden p-3 theme-transition">
     <div class="flex gap-4">
-      <router-link :to="`/post/${post.post_slug}`" class="flex-shrink-0 w-40 md:w-56">
+      <router-link :to="'/post/' + post.post_slug" class="flex-shrink-0 w-40 md:w-56">
         <img :src="thumb" :alt="post.post_title" class="w-40 md:w-56 h-28 md:h-36 object-cover rounded-lg" />
       </router-link>
       <div class="flex-1 min-w-0">
-        <router-link :to="`/post/${post.post_slug}`" class="block">
-          <h3 class="text-lg md:text-xl font-semibold text-slate-900 leading-snug mb-1">{{ post.post_title }}</h3>
+        <router-link :to="'/post/' + post.post_slug" class="block">
+          <h3 class="text-lg md:text-xl font-semibold text-slate-900 dark:text-slate-100 leading-snug mb-1">{{ post.post_title }}</h3>
         </router-link>
-        <p class="text-slate-600 text-sm md:text-base leading-relaxed line-clamp-4">{{ excerpt }}</p>
+        <p class="text-slate-600 dark:text-slate-300 text-sm md:text-base leading-relaxed line-clamp-4">{{ excerpt }}</p>
       </div>
     </div>
   </article>
