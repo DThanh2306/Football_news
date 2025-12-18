@@ -58,4 +58,60 @@ async function fetchFixtures({ date_from, date_to, league_external_id }) {
   }
 }
 
-module.exports = { fetchFixtures }
+async function fetchTeams({ league_external_id, season_year }) {
+  const key = process.env.RAPIDAPI_KEY
+  const host = process.env.API_FOOTBALL_HOST || 'v3.football.api-sports.io'
+  if (!key) throw new ApiError(500, 'Missing RAPIDAPI_KEY for API-FOOTBALL')
+  if (!league_external_id) throw new ApiError(400, 'Missing league_external_id')
+  const headers = { 'X-RapidAPI-Key': key, 'X-RapidAPI-Host': host }
+  const params = { league: league_external_id }
+  if (season_year) params.season = season_year
+  const url = `https://${host}/teams`
+  try {
+    const res = await axios.get(url, { headers, params })
+    const list = Array.isArray(res.data.response) ? res.data.response : []
+    return list.map(x => ({
+      external_team_id: x.team?.id != null ? String(x.team.id) : null,
+      club_name: x.team?.name || null,
+      club_img: x.team?.logo || null,
+      country: x.team?.country || x.country?.name || null,
+    }))
+  } catch (err) {
+    throw new ApiError(502, 'Provider API-FOOTBALL teams request failed', err)
+  }
+}
+
+async function fetchSquadByTeam({ team_external_id, season_year }) {
+  const key = process.env.RAPIDAPI_KEY
+  const host = process.env.API_FOOTBALL_HOST || 'v3.football.api-sports.io'
+  if (!key) throw new ApiError(500, 'Missing RAPIDAPI_KEY for API-FOOTBALL')
+  if (!team_external_id) throw new ApiError(400, 'Missing team_external_id')
+  const headers = { 'X-RapidAPI-Key': key, 'X-RapidAPI-Host': host }
+  const params = { team: team_external_id }
+  if (season_year) params.season = season_year
+  const url = `https://${host}/players`
+  try {
+    const res = await axios.get(url, { headers, params })
+    const list = Array.isArray(res.data.response) ? res.data.response : []
+    // API returns paginated; keep only first page for simplicity
+    const players = []
+    for (const item of list) {
+      const p = item.player || {}
+      const sp = (item.statistics && item.statistics[0]) || {}
+      players.push({
+        external_player_id: p.id != null ? String(p.id) : null,
+        player_name: p.name || null,
+        player_nationality: p.nationality || sp.team?.country || null,
+        player_date_of_birth: p.birth?.date || null,
+        position: sp?.games?.position || null,
+        number: sp?.games?.number || null,
+        player_img: p.photo || null,
+      })
+    }
+    return players
+  } catch (err) {
+    throw new ApiError(502, 'Provider API-FOOTBALL players request failed', err)
+  }
+}
+
+module.exports = { fetchFixtures, fetchTeams, fetchSquadByTeam }

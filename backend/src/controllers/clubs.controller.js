@@ -113,6 +113,17 @@ async function updateClub(req, res, next) {
   }
 }
 
+async function importClubs(req, res, next) {
+  try {
+    const { provider, league_external_id, league_id, season_year, update_club_logos } = req.body || {}
+    if (!provider || !league_external_id) return res.status(400).json(JSend.fail('Missing provider or league_external_id'))
+    const result = await clubService.importClubsFromProvider({ provider, league_external_id, league_id, season_year, update_club_logos, update_unmapped_clubs: Boolean(req.body?.update_unmapped_clubs) })
+    return res.status(200).json(JSend.success(result))
+  } catch (error) {
+    return next(new ApiError(500, 'Lỗi khi import clubs'))
+  }
+}
+
 async function deleteClub(req, res, next) {
   const { id } = req.params;
     try {
@@ -125,10 +136,32 @@ async function deleteClub(req, res, next) {
   }
 }
 
+async function updateClubExternal(req, res, next) {
+  const { id } = req.params
+  const { external_source, external_team_id, external_logo_url, overwrite_logo } = req.body || {}
+  try {
+    if (!external_source || !external_team_id) {
+      return res.status(400).json(JSend.fail('Missing external_source or external_team_id'))
+    }
+    const club = await clubService.getClubById(id)
+    if (!club) return res.status(404).json(JSend.fail('Không tìm thấy CLB'))
+
+    await clubService.updateClubExternal(id, { external_source, external_team_id, external_logo_url, overwrite_logo: Boolean(overwrite_logo) })
+    return res.status(200).json(JSend.success('Updated external mapping'))
+  } catch (error) {
+    if (error.code === '23505') { // unique violation on (external_source, external_team_id)
+      return next(new ApiError(409, 'External mapping already used by another club'))
+    }
+    return next(new ApiError(500, 'Lỗi khi cập nhật external mapping'))
+  }
+}
+
 module.exports = {
   createClub,
   getAllClubs,
   getClubById,
   updateClub,
   deleteClub,
+  updateClubExternal,
+  importClubs,
 };

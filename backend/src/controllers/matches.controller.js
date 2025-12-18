@@ -99,8 +99,8 @@ async function updateMatchScore(req, res, next) {
 
 async function importMatches(req, res, next) {
   try {
-    const { provider, date_from, date_to, league_external_id, league_id, country } = req.body || {};
-    const result = await matchService.importMatchesFromProvider({ provider, date_from, date_to, league_external_id, league_id, country });
+    const { provider, date_from, date_to, league_external_id, league_id, country, update_club_logos } = req.body || {};
+    const result = await matchService.importMatchesFromProvider({ provider, date_from, date_to, league_external_id, league_id, country, update_club_logos });
     return res.status(200).json(JSend.success(result));
   } catch (error) {
     return next(error);

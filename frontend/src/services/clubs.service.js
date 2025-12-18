@@ -46,4 +46,9 @@ export const clubsService = {
     const res = await axios.delete(`${BASE_URL}/${id}`);
     return res.data;
   },
+
+  async importClubs(payload) {
+    const res = await axios.post(`/clubs/import`, payload)
+    return res.data
+  },
 };

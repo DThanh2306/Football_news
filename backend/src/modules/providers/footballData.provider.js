@@ -63,4 +63,47 @@ async function fetchFixtures({ date_from, date_to, league_external_id }) {
   }
 }
 
-module.exports = { fetchFixtures }
+async function fetchTeams({ league_external_id }) {
+  const token = process.env.FOOTBALL_DATA_API_KEY
+  if (!token) throw new ApiError(500, 'Missing FOOTBALL_DATA_API_KEY')
+  if (!league_external_id) throw new ApiError(400, 'Missing league_external_id')
+  const headers = { 'X-Auth-Token': token }
+  const url = `https://api.football-data.org/v4/competitions/${league_external_id}/teams`
+  try {
+    const res = await axios.get(url, { headers })
+    const list = Array.isArray(res.data.teams) ? res.data.teams : []
+    return list.map(t => ({
+      external_team_id: t.id != null ? String(t.id) : null,
+      club_name: t.name || null,
+      club_img: t.crest || null,
+      country: t.area?.name || null,
+    }))
+  } catch (err) {
+    throw new ApiError(502, 'Provider football-data teams request failed', err)
+  }
+}
+
+async function fetchSquadByTeam({ team_external_id }) {
+  const token = process.env.FOOTBALL_DATA_API_KEY
+  if (!token) throw new ApiError(500, 'Missing FOOTBALL_DATA_API_KEY')
+  if (!team_external_id) throw new ApiError(400, 'Missing team_external_id')
+  const headers = { 'X-Auth-Token': token }
+  const url = `https://api.football-data.org/v4/teams/${team_external_id}`
+  try {
+    const res = await axios.get(url, { headers })
+    const squad = Array.isArray(res.data.squad) ? res.data.squad : []
+    return squad.map(m => ({
+      external_player_id: m.id != null ? String(m.id) : null,
+      player_name: m.name || null,
+      player_nationality: m.nationality || res.data.area?.name || null,
+      player_date_of_birth: m.dateOfBirth || null,
+      position: m.position || null,
+      number: m.shirtNumber || null,
+      player_img: null,
+    }))
+  } catch (err) {
+    throw new ApiError(502, 'Provider football-data team squad request failed', err)
+  }
+}
+
+module.exports = { fetchFixtures, fetchTeams, fetchSquadByTeam }

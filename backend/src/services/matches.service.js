@@ -83,7 +83,7 @@ async function deleteMatch(match_id) {
   }
 }
 
-async function importMatchesFromProvider({ provider, date_from, date_to, league_external_id, league_id, country }) {
+async function importMatchesFromProvider({ provider, date_from, date_to, league_external_id, league_id, country, update_club_logos }) {
 
   try {
     const source = (provider || '').toLowerCase();
@@ -194,6 +194,19 @@ async function importMatchesFromProvider({ provider, date_from, date_to, league_
       if (hasClubExternal) {
         mapped_home_id = await mapClubIdByExternal(source, fx.home_team_external_id)
         mapped_away_id = await mapClubIdByExternal(source, fx.away_team_external_id)
+        // Optionally update club logos from provider
+        async function maybeSyncLogo(club_id, team_img) {
+          if (!update_club_logos) return
+          if (!club_id || !team_img) return
+          try {
+            const row = await knex('clubs').select('club_img').where({ club_id }).first()
+            const update = { external_logo_url: team_img, logo_last_synced_at: knex.fn.now() }
+            if (!row?.club_img) update.club_img = team_img
+            await knex('clubs').where({ club_id }).update(update)
+          } catch (e) { /* ignore logo sync errors */ }
+        }
+        await maybeSyncLogo(mapped_home_id, fx.home_team_img)
+        await maybeSyncLogo(mapped_away_id, fx.away_team_img)
       }
       if (!mapped_home_id || !mapped_away_id) {
         async function mapClubByNameScoped(name) {

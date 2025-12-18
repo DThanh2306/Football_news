@@ -130,6 +130,13 @@ router.get("/:id", playersController.getPlayerById);
  *       404: { description: Không tìm thấy cầu thủ }
  */
 router.put("/:id", verifyToken, authorize("players", "update"), upload.single("player_img"), playersController.updatePlayer);
+
+// Delete player
+router.delete('/:id', verifyToken, authorize('players', 'delete'), playersController.deletePlayer);
+
+// Import players
+router.post('/import', verifyToken, authorize('players', 'create'), playersController.importPlayers)
+
 module.exports = {
   setup(app) {
     app.use("/api/players", router);

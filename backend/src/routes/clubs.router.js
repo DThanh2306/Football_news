@@ -59,6 +59,9 @@ router.post("/", verifyToken, authorize("clubs", "create"), upload.single("club_
  */
 router.get("/", clubsController.getAllClubs);
 
+// Import clubs from provider
+router.post("/import", verifyToken, authorize("clubs", "create"), clubsController.importClubs);
+
 /**
  * @swagger
  * /clubs/{id}:
@@ -125,6 +128,9 @@ router.get("/:id", clubsController.getClubById);
  *         description: Lỗi máy chủ
  */
 router.put("/:id", verifyToken, authorize("clubs", "update"), upload.single("club_img"), clubsController.updateClub);
+
+// Attach/update external mapping for a club
+router.patch("/:id/external", verifyToken, authorize("clubs", "update"), clubsController.updateClubExternal);
 
 /**
  * @swagger

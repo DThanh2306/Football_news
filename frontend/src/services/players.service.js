@@ -46,4 +46,15 @@ export const playersService = {
 
     return res.data
   },
+
+  async importPlayers(payload) {
+    // payload may include: provider, league_id, club_id, update_only
+    const res = await axios.post(`${BASE_URL}/import`, payload)
+    return res.data
+  },
+
+  async deletePlayer(id) {
+    const res = await axios.delete(`${BASE_URL}/${id}`)
+    return res.data
+  },
 }

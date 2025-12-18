@@ -6,10 +6,9 @@
     </a-breadcrumb>
     <div class="flex justify-between items-center mb-4">
       <h1 class="text-3xl font-bold text-blue-800 tracking-tight">Match Management</h1>
-      <div class="flex gap-2">
-        <a-button @click="openCreate">Add match</a-button>
-        <a-button type="primary" class="bg-green-600 border-green-600" @click="openImport">
-          Import from provider
+      <div class="flex gap-2 items-center">
+        <a-button type="primary" class="bg-blue-600 border-blue-600" @click="openAddImport">
+          Thêm / Import
         </a-button>
       </div>
     </div>
@@ -99,156 +98,123 @@
       </a-table>
     </div>
 
-    <!-- Import modal -->
+    <!-- Add / Import Modal -->
     <a-modal
-      v-model:open="importOpen"
-      title="Import matches from provider"
+      v-model:open="modalOpen"
+      :title="activeTab === 'add' ? (isCreating ? 'Add match' : 'Update match') : 'Import matches from provider'"
       :footer="null"
+      @cancel="resetModal"
       destroyOnClose
     >
-      <div class="space-y-3">
-        <a-alert
-          type="info"
-          message="This will fetch fixtures from the selected provider and upsert into your database."
-          show-icon
-        />
-        <a-form :model="importForm" layout="vertical">
-          <a-form-item label="Provider" required>
-            <a-select v-model:value="importForm.provider" placeholder="Select provider">
-              <a-select-option value="football-data">football-data</a-select-option>
-              <a-select-option value="api-football">api-football</a-select-option>
-            </a-select>
-          </a-form-item>
-          <a-form-item label="Country (optional)">
-            <a-select v-model:value="importForm.country" placeholder="Country" allow-clear>
-              <a-select-option v-for="c in countries" :key="c" :value="c">{{ c }}</a-select-option>
-            </a-select>
-          </a-form-item>
-          <a-form-item label="League (internal, optional)">
-            <a-select v-model:value="importForm.league_id" placeholder="League" allow-clear>
-              <a-select-option v-for="l in leagues" :key="l.league_id" :value="l.league_id">{{
-                l.league_name
-              }}</a-select-option>
-            </a-select>
-          </a-form-item>
-          <a-form-item label="Date range">
-            <a-range-picker v-model:value="importDateRange" />
-          </a-form-item>
-          <a-form-item label="League external id (provider)">
-            <a-select
-              v-if="providerLeagues.length"
-              v-model:value="importForm.league_external_id"
-              show-search
-              allow-clear
-              placeholder="Select provider league (or type manually)"
-              :filter-option="(input, option) => option?.label?.toLowerCase?.().includes?.(input.toLowerCase())"
-              :options="providerLeagues"
-            />
-            <a-input
-              v-else
-              v-model:value="importForm.league_external_id"
-              placeholder="e.g. PL (football-data) or 39 (API-FOOTBALL)"
-            />
-          </a-form-item>
-          <div class="flex justify-end gap-2">
-            <a-button @click="importOpen = false">Cancel</a-button>
-            <a-button
-              type="primary"
-              class="bg-green-600 border-green-600"
-              :loading="importLoading"
-              @click="doImport"
-              >Import</a-button
-            >
-          </div>
-        </a-form>
-      </div>
-    </a-modal>
-
-    <!-- Create/Edit match modal -->
-    <a-modal
-      v-model:open="editOpen"
-      :title="isCreating ? 'Add match' : 'Update match'"
-      :footer="null"
-      destroyOnClose
-    >
-      <div>
-        <a-form :model="form" layout="vertical">
-          <div class="grid grid-cols-2 gap-3">
-            <a-form-item label="League" required>
-              <a-select v-model:value="form.league_id" placeholder="Select league">
-                <a-select-option v-for="l in leagues" :key="l.league_id" :value="l.league_id">{{
-                  l.league_name
-                }}</a-select-option>
-              </a-select>
-            </a-form-item>
-            <a-form-item label="Season">
-              <a-select v-model:value="form.season_id" placeholder="Select season" allow-clear>
-                <a-select-option v-for="s in seasons" :key="s.season_id" :value="s.season_id">{{
-                  s.name || s.start_date + ' - ' + s.end_date
-                }}</a-select-option>
-              </a-select>
-            </a-form-item>
-            <a-form-item label="Home" required>
-              <a-select
-                v-model:value="form.home_fc_id"
-                show-search
-                :filter-option="filterOption"
-                placeholder="Select club"
-              >
-                <a-select-option v-for="c in modalClubs" :key="c.club_id" :value="c.club_id">
-                  <div class="flex items-center gap-2">
-                    <img :src="c.club_img" class="w-5 h-5 object-contain rounded border" />
-                    <span>{{ c.club_name }}</span>
-                  </div>
-                </a-select-option>
-              </a-select>
-            </a-form-item>
-            <a-form-item label="Away" required>
-              <a-select
-                v-model:value="form.away_fc_id"
-                show-search
-                :filter-option="filterOption"
-                placeholder="Select club"
-              >
-                <a-select-option v-for="c in modalClubs" :key="c.club_id" :value="c.club_id">
-                  <div class="flex items-center gap-2">
-                    <img :src="c.club_img" class="w-5 h-5 object-contain rounded border" />
-                    <span>{{ c.club_name }}</span>
-                  </div>
-                </a-select-option>
-              </a-select>
-            </a-form-item>
-            <a-form-item label="Date/Time" required>
-              <a-date-picker v-model:value="form.match_date" show-time class="w-full" />
-            </a-form-item>
-            <a-form-item label="Round">
-              <a-input v-model:value="form.round" placeholder="e.g. 1" />
-            </a-form-item>
-            <a-form-item label="Status">
-              <a-select v-model:value="form.status">
-                <a-select-option value="scheduled">scheduled</a-select-option>
-                <a-select-option value="live">live</a-select-option>
-                <a-select-option value="ft">ft</a-select-option>
-                <a-select-option value="postponed">postponed</a-select-option>
-                <a-select-option value="canceled">canceled</a-select-option>
-              </a-select>
-            </a-form-item>
-            <a-form-item label="Score">
-              <div class="flex items-center gap-2">
-                <a-input-number v-model:value="form.home_score" :min="0" class="w-full" />
-                <span>-</span>
-                <a-input-number v-model:value="form.away_score" :min="0" class="w-full" />
+      <a-tabs v-model:activeKey="activeTab">
+        <a-tab-pane key="add" tab="Thêm trận đấu">
+          <a-form :model="form" layout="vertical">
+            <div class="grid grid-cols-2 gap-3">
+              <a-form-item label="League" required>
+                <a-select v-model:value="form.league_id" placeholder="Select league">
+                  <a-select-option v-for="l in leagues" :key="l.league_id" :value="l.league_id">{{ l.league_name }}</a-select-option>
+                </a-select>
+              </a-form-item>
+              <a-form-item label="Season">
+                <a-select v-model:value="form.season_id" placeholder="Select season" allow-clear>
+                  <a-select-option v-for="s in seasons" :key="s.season_id" :value="s.season_id">{{ s.name || s.start_date + ' - ' + s.end_date }}</a-select-option>
+                </a-select>
+              </a-form-item>
+              <a-form-item label="Home" required>
+                <a-select v-model:value="form.home_fc_id" show-search :filter-option="filterOption" placeholder="Select club">
+                  <a-select-option v-for="c in modalClubs" :key="c.club_id" :value="c.club_id">
+                    <div class="flex items-center gap-2">
+                      <img :src="c.club_img" class="w-5 h-5 object-contain rounded border" />
+                      <span>{{ c.club_name }}</span>
+                    </div>
+                  </a-select-option>
+                </a-select>
+              </a-form-item>
+              <a-form-item label="Away" required>
+                <a-select v-model:value="form.away_fc_id" show-search :filter-option="filterOption" placeholder="Select club">
+                  <a-select-option v-for="c in modalClubs" :key="c.club_id" :value="c.club_id">
+                    <div class="flex items-center gap-2">
+                      <img :src="c.club_img" class="w-5 h-5 object-contain rounded border" />
+                      <span>{{ c.club_name }}</span>
+                    </div>
+                  </a-select-option>
+                </a-select>
+              </a-form-item>
+              <a-form-item label="Date/Time" required>
+                <a-date-picker v-model:value="form.match_date" show-time class="w-full" />
+              </a-form-item>
+              <a-form-item label="Round">
+                <a-input v-model:value="form.round" placeholder="e.g. 1" />
+              </a-form-item>
+              <a-form-item label="Status">
+                <a-select v-model:value="form.status">
+                  <a-select-option value="scheduled">scheduled</a-select-option>
+                  <a-select-option value="live">live</a-select-option>
+                  <a-select-option value="ft">ft</a-select-option>
+                  <a-select-option value="postponed">postponed</a-select-option>
+                  <a-select-option value="canceled">canceled</a-select-option>
+                </a-select>
+              </a-form-item>
+              <a-form-item label="Score">
+                <div class="flex items-center gap-2">
+                  <a-input-number v-model:value="form.home_score" :min="0" class="w-full" />
+                  <span>-</span>
+                  <a-input-number v-model:value="form.away_score" :min="0" class="w-full" />
+                </div>
+              </a-form-item>
+            </div>
+            <div class="flex justify-end gap-2">
+              <a-button @click="resetModal">Cancel</a-button>
+              <a-button type="primary" class="bg-blue-600 border-blue-600" @click="saveMatch">Save</a-button>
+            </div>
+          </a-form>
+        </a-tab-pane>
+        <a-tab-pane key="import" tab="Import từ provider">
+          <div class="space-y-3">
+            <a-alert type="info" message="This will fetch fixtures from the selected provider and upsert into your database." show-icon />
+            <a-form :model="importForm" layout="vertical">
+              <a-form-item label="Provider" required>
+                <a-select v-model:value="importForm.provider" placeholder="Select provider">
+                  <a-select-option value="football-data">football-data</a-select-option>
+                  <a-select-option value="api-football">api-football</a-select-option>
+                </a-select>
+              </a-form-item>
+              <a-form-item label="Country (optional)">
+                <a-select v-model:value="importForm.country" placeholder="Country" allow-clear>
+                  <a-select-option v-for="c in countries" :key="c" :value="c">{{ c }}</a-select-option>
+                </a-select>
+              </a-form-item>
+              <a-form-item label="League (internal, optional)">
+                <a-select v-model:value="importForm.league_id" placeholder="League" allow-clear>
+                  <a-select-option v-for="l in leagues" :key="l.league_id" :value="l.league_id">{{ l.league_name }}</a-select-option>
+                </a-select>
+              </a-form-item>
+              <a-form-item label="Date range">
+                <a-range-picker v-model:value="importDateRange" />
+              </a-form-item>
+              <a-form-item label="League external id (provider)">
+                <a-select
+                  v-if="providerLeagues.length"
+                  v-model:value="importForm.league_external_id"
+                  show-search
+                  allow-clear
+                  placeholder="Select provider league (or type manually)"
+                  :filter-option="(input, option) => option?.label?.toLowerCase?.().includes?.(input.toLowerCase())"
+                  :options="providerLeagues"
+                />
+                <a-input v-else v-model:value="importForm.league_external_id" placeholder="e.g. PL (football-data) or 39 (API-FOOTBALL)" />
+              </a-form-item>
+              <a-form-item>
+                <a-checkbox v-model:checked="importForm.update_club_logos">Update club logos from provider (only if missing)</a-checkbox>
+              </a-form-item>
+              <div class="flex justify-end gap-2">
+                <a-button @click="resetModal">Cancel</a-button>
+                <a-button type="primary" class="bg-green-600 border-green-600" :loading="importLoading" @click="doImport">Import</a-button>
               </div>
-            </a-form-item>
+            </a-form>
           </div>
-          <div class="flex justify-end gap-2">
-            <a-button @click="editOpen = false">Cancel</a-button>
-            <a-button type="primary" class="bg-blue-600 border-blue-600" @click="saveMatch"
-              >Save</a-button
-            >
-          </div>
-        </a-form>
-      </div>
+        </a-tab-pane>
+      </a-tabs>
     </a-modal>
   </div>
 </template>
@@ -409,25 +375,34 @@ function resetFilters() {
   pagination.value.current = 1
 }
 
-// Import modal state
-const importOpen = ref(false)
+// Unified Add/Import modal state
+const modalOpen = ref(false)
+const activeTab = ref('add')
 const importLoading = ref(false)
-const importForm = ref({ provider: undefined, league_external_id: '', league_id: undefined, country: undefined })
+const importForm = ref({ provider: undefined, league_external_id: '', league_id: undefined, country: undefined, update_club_logos: false })
 const importDateRange = ref([])
-const importLeagues = ref([])
 const providerLeagues = ref([])
 
-watch(() => importForm.value.country, async (c) => {
-  try {
-    const res = await leaguesService.getAllLeagues(c ? { country: c } : {})
-    importLeagues.value = res.data
-    importForm.value.league_id = undefined
-  } catch (e) { console.error('Failed to load leagues for import', e) }
-})
-
-function openImport() {
-  importOpen.value = true
+function openAddImport() {
+  activeTab.value = 'add'
+  isCreating.value = true
+  current.value = null
+  form.value = {
+    league_id: leagueId.value,
+    season_id: seasonId.value,
+    home_fc_id: undefined,
+    away_fc_id: undefined,
+    match_date: dayjs(),
+    round: undefined,
+    status: 'scheduled',
+    home_score: 0,
+    away_score: 0,
+  }
+  loadModalClubs()
+  modalOpen.value = true
 }
+
+// Note: importForm.country does not filter leagues list; it's passed to backend only
 
 watch(() => importForm.value.provider, (p) => {
   // Minimal built-in league catalogs for quick selection
@@ -471,10 +446,11 @@ async function doImport() {
       league_external_id: importForm.value.league_external_id || undefined,
       league_id: importForm.value.league_id || undefined,
       country: importForm.value.country || undefined,
+      update_club_logos: importForm.value.update_club_logos || false,
     }
     const res = await matchesService.importMatches(payload)
     message.success(`Imported: ${res.data?.created ?? 0} created, ${res.data?.updated ?? 0} updated`)
-    importOpen.value = false
+    modalOpen.value = false
     await query.refetch()
   } catch (e) {
     console.error('Import failed', e)
@@ -485,7 +461,7 @@ async function doImport() {
 }
 
 // Edit score modal
-const editOpen = ref(false)
+// removed editOpen in unified modal
 const current = ref(null)
 const isCreating = ref(false)
 const form = ref({
@@ -519,24 +495,6 @@ async function loadModalClubs() {
   }
 }
 
-function openCreate() {
-  isCreating.value = true
-  current.value = null
-  form.value = {
-    league_id: leagueId.value,
-    season_id: seasonId.value,
-    home_fc_id: undefined,
-    away_fc_id: undefined,
-    match_date: dayjs(),
-    round: undefined,
-    status: 'scheduled',
-    home_score: 0,
-    away_score: 0,
-  }
-  loadModalClubs()
-  editOpen.value = true
-}
-
 watch(() => form.value.league_id, async () => {
   await loadModalClubs()
 })
@@ -556,7 +514,8 @@ function openEdit(record) {
     away_score: record.away_score ?? 0,
   }
   loadModalClubs()
-  editOpen.value = true
+  activeTab.value = 'add'
+  modalOpen.value = true
 }
 
 async function saveMatch() {
@@ -570,12 +529,16 @@ async function saveMatch() {
     } else if (current.value) {
       await matchesService.updateMatch(current.value.match_id, payload)
     }
-    editOpen.value = false
+    modalOpen.value = false
     await query.refetch()
   } catch (e) {
     console.error('Save match failed', e)
     message.error('Save failed')
   }
+}
+
+function resetModal() {
+  modalOpen.value = false
 }
 
 async function removeMatch(record) {

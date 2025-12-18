@@ -148,11 +148,28 @@ async function getPlayersByClub(req, res, next) {
   }
 }
 
+async function importPlayers(req, res, next) {
+  try {
+    const { provider, club_id, league_id, update_only, season_year } = req.body || {}
+    if (!provider) return res.status(400).json(JSend.fail('Thiếu provider'))
+    if (!club_id && !league_id) return res.status(400).json(JSend.fail('Thiếu club_id hoặc league_id'))
+    const result = await playerService.importPlayersFromProvider({ provider, club_id, league_id, update_only, season_year })
+    return res.status(200).json(JSend.success(result))
+  } catch (error) {
+    console.error('Import players failed:', error?.message)
+    if (error && error.statusCode) {
+      return next(error)
+    }
+    return next(new ApiError(500, error?.message || 'Lỗi import cầu thủ'))
+  }
+}
+
 module.exports = {
   createPlayer,
   getAllPlayers,
   getPlayerById,
   updatePlayer,
   deletePlayer,
-  getPlayersByClub
+  getPlayersByClub,
+  importPlayers,
 };
